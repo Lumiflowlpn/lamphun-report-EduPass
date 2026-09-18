@@ -51,8 +51,12 @@
             <option value="เวียงหนองล่อง">เวียงหนองล่อง</option>
         </select>
 
-        <label>รายละเอียดรายงาน:</label>
-        <textarea id="report" rows="4" placeholder="ระบุรายละเอียดงาน..." required></textarea>
+        <label>สถานะการดำเนินงาน:</label>
+            <select id="report" required>
+                <option value="">-- กรุณาเลือกสถานะ --</option>
+                <option value="ดำเนินการลงทะเบียนเข้าใช้งานแล้ว">ดำเนินการลงทะเบียนเข้าใช้งานแล้ว</option>
+                <option value="ยังไม่สามารถดำเนินงานการได้">ยังไม่สามารถดำเนินงานการได้</option>
+            </select></textarea>
 
         <label>แนบภาพถ่าย:</label>
         <input type="file" id="uploadFile" accept="image/*" required>
@@ -63,7 +67,7 @@
 
 <script>
     // *** นำ Web App URL อันใหม่ มาใส่ตรงนี้ ***
-    const scriptURL = 'ใส่_WEB_APP_URL_ของคุณที่นี่'; 
+    const scriptURL = 'https://script.google.com/macros/s/AKfycby7VDOj33Bz15mVjlyXZ5Ivxk1mJMc6dkqFZcGV_mgPN3ShXzzPHvPJndNH-d3m3_GZ/exec'; 
 
     // ทันทีที่เปิดเว็บ ให้ไปดึงรายชื่อ 100 คนจาก Google Sheets มาใส่ใน Datalist
     window.onload = function() {
