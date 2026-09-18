@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบรายงานผลการปฏิบัติงาน - สถิติจังหวัดลำพูน</title>
+    <title>ระบบรายงานผลการลงทะเบียน Edu Pass</title>
     <style>
         body { font-family: 'Sarabun', sans-serif; background-color: #f4f7f6; padding: 20px; }
         .container { max-width: 500px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
@@ -18,7 +18,7 @@
 <body>
 
 <div class="container">
-    <h2>ระบบรายงานผลการปฏิบัติงาน</h2>
+    <h2>ระบบรายงานผลการลงทะเบียน Edu Pass</h2>
     
     <form id="reportForm">
         <!-- ใช้ input list คู่กับ datalist เพื่อให้พิมพ์ค้นหาชื่อได้ -->
@@ -36,6 +36,9 @@
             <option value="พนักงานราชการ">พนักงานราชการ</option>
         </select>
 
+        <label>หน่วยงาน / สถานศึกษา:</label>
+        <input type="text" id="agency" placeholder="ระบุชื่อหน่วยงานหรือสถานศึกษา..." required>
+        
         <!-- เพิ่มช่องเลือกอำเภอ -->
         <label>รายงานผลหน่วยงาน/สถานศึกษา:</label>
         <select id="amphoe" required>
@@ -107,6 +110,7 @@
                 const payload = {
                     name: document.getElementById('name').value,
                     position: document.getElementById('position').value,
+                    agency: document.getElementById('agency').value, // บรรทัดที่เพิ่มใหม่
                     amphoe: document.getElementById('amphoe').value, // ส่งค่าอำเภอ
                     report: document.getElementById('report').value,
                     fileData: base64Data,
