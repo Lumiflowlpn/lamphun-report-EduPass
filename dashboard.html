@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>รายงานผลการดำเนินงาน - สำนักงานสถิติจังหวัดลำพูน</title>
+    <style>
+        body { font-family: 'Sarabun', sans-serif; background-color: #f4f7f6; padding: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #333; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #007bff; color: white; text-align: center; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        .status-success { color: green; font-weight: bold; }
+        .status-error { color: red; font-weight: bold; }
+        .btn-view { padding: 5px 10px; background-color: #17a2b8; color: white; text-decoration: none; border-radius: 3px; font-size: 12px; }
+        .summary-box { display: flex; gap: 20px; justify-content: center; margin-bottom: 20px; }
+        .box { padding: 15px 30px; border-radius: 8px; text-align: center; color: white; font-weight: bold; min-width: 150px;}
+        .bg-blue { background-color: #007bff; }
+        .bg-green { background-color: #28a745; }
+        .bg-red { background-color: #dc3545; }
+        .box span { display: block; font-size: 24px; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>📊 สรุปรายงานผลการลงทะเบียนเข้าใช้งาน</h2>
+    
+    <!-- กล่องสรุปตัวเลข -->
+    <div class="summary-box">
+        <div class="box bg-blue">ส่งรายงานแล้ว <span id="totalCount">0</span></div>
+        <div class="box bg-green">ลงทะเบียนแล้ว <span id="successCount">0</span></div>
+        <div class="box bg-red">ยังไม่สามารถทำได้ <span id="errorCount">0</span></div>
+    </div>
+
+    <!-- ตารางแสดงข้อมูล -->
+    <div style="overflow-x:auto;">
+        <table>
+            <thead>
+                <tr>
+                    <th>วัน/เวลา</th>
+                    <th>อำเภอ</th>
+                    <th>ชื่อ-นามสกุล</th>
+                    <th>ตำแหน่ง</th>
+                    <th>สถานะ</th>
+                    <th>หลักฐาน</th>
+                </tr>
+            </thead>
+            <tbody id="dataTable">
+                <tr><td colspan="6" style="text-align:center;">กำลังโหลดข้อมูล...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    // *** นำ Web App URL อันใหม่ที่เพิ่ง Deploy มาใส่ตรงนี้ ***
+    const scriptURL = 'ใส่_WEB_APP_URL_ของคุณที่นี่'; 
+
+    window.onload = function() {
+        // เติม ?action=getReport เพื่อบอกให้ Apps Script ส่งข้อมูลรายงานกลับมา
+        fetch(scriptURL + "?action=getReport")
+            .then(response => response.json())
+            .then(data => {
+                const table = document.getElementById('dataTable');
+                table.innerHTML = ''; 
+
+                let success = 0;
+                let error = 0;
+
+                data.forEach(row => {
+                    // นับสถิติ
+                    if(row.status === "ดำเนินการลงทะเบียนเข้าใช้งานแล้ว") success++;
+                    if(row.status === "ยังไม่สามารถดำเนินงานการได้") error++;
+
+                    // กำหนดสีให้สถานะ
+                    let statusClass = row.status === "ดำเนินการลงทะเบียนเข้าใช้งานแล้ว" ? "status-success" : "status-error";
+
+                    let tr = `<tr>
+                        <td>${row.timestamp}</td>
+                        <td style="text-align:center;">${row.amphoe}</td>
+                        <td>${row.name}</td>
+                        <td>${row.position}</td>
+                        <td class="${statusClass}">${row.status}</td>
+                        <td style="text-align:center;"><a href="${row.imageUrl}" target="_blank" class="btn-view">ดูรูปภาพ</a></td>
+                    </tr>`;
+                    table.innerHTML += tr;
+                });
+
+                // อัปเดตตัวเลขสรุป
+                document.getElementById('totalCount').innerText = data.length;
+                document.getElementById('successCount').innerText = success;
+                document.getElementById('errorCount').innerText = error;
+
+                if(data.length === 0) {
+                    table.innerHTML = '<tr><td colspan="6" style="text-align:center;">ยังไม่มีข้อมูลการรายงาน</td></tr>';
+                }
+            })
+            .catch(error => {
+                document.getElementById('dataTable').innerHTML = '<tr><td colspan="6" style="text-align:center; color:red;">เกิดข้อผิดพลาดในการโหลดข้อมูล</td></tr>';
+            });
+    };
+</script>
+</body>
+</html>
