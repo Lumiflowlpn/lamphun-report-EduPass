@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบรายงานผลการปฏิบัติงาน - สถิติจังหวัดลำพูน</title>
+    <style>
+        body { font-family: 'Sarabun', sans-serif; background-color: #f4f7f6; padding: 20px; }
+        .container { max-width: 500px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #333; }
+        label { font-weight: bold; display: block; margin-top: 15px; }
+        input[type="text"], select, textarea, input[type="file"] { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background-color: #28a745; color: white; border: none; border-radius: 5px; font-size: 16px; margin-top: 20px; cursor: pointer; }
+        button:disabled { background-color: #94d3a2; cursor: not-allowed; }
+        .loading { font-size: 0.9em; color: #666; margin-top: 5px; display: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>ระบบรายงานผลการปฏิบัติงาน</h2>
+    
+    <form id="reportForm">
+        <!-- ใช้ input list คู่กับ datalist เพื่อให้พิมพ์ค้นหาชื่อได้ -->
+        <label>ชื่อ-นามสกุล (พิมพ์เพื่อค้นหา):</label>
+        <input type="text" id="name" list="nameList" placeholder="กำลังโหลดรายชื่อ..." required autocomplete="off" disabled>
+        <datalist id="nameList">
+            <!-- รายชื่อจะถูกดึงมาใส่ตรงนี้อัตโนมัติ -->
+        </datalist>
+
+        <label>ตำแหน่ง:</label>
+        <select id="position" required>
+            <option value="">-- กรุณาเลือกตำแหน่ง --</option>
+            <option value="นักวิชาการสถิติ">นักวิชาการสถิติ</option>
+            <option value="เจ้าพนักงานสถิติ">เจ้าพนักงานสถิติ</option>
+            <option value="พนักงานราชการ">พนักงานราชการ</option>
+        </select>
+
+        <!-- เพิ่มช่องเลือกอำเภอ -->
+        <label>รายงานผลหน่วยงาน/สถานศึกษา:</label>
+        <select id="amphoe" required>
+            <option value="">-- กรุณาเลือกหน่วยงาน/สถานศึกษา --</option>
+            <option value="จังหวัด">จังหวัด</option>
+            <option value="เมืองลำพูน">เมืองลำพูน</option>
+            <option value="แม่ทา">แม่ทา</option>
+            <option value="บ้านโฮ่ง">บ้านโฮ่ง</option>
+            <option value="ลี้">ลี้</option>
+            <option value="ทุ่งหัวช้าง">ทุ่งหัวช้าง</option>
+            <option value="ป่าซาง">ป่าซาง</option>
+            <option value="บ้านธิ">บ้านธิ</option>
+            <option value="เวียงหนองล่อง">เวียงหนองล่อง</option>
+        </select>
+
+        <label>รายละเอียดรายงาน:</label>
+        <textarea id="report" rows="4" placeholder="ระบุรายละเอียดงาน..." required></textarea>
+
+        <label>แนบภาพถ่าย:</label>
+        <input type="file" id="uploadFile" accept="image/*" required>
+
+        <button type="submit" id="submitBtn">ส่งรายงานผล</button>
+    </form>
+</div>
+
+<script>
+    // *** นำ Web App URL อันใหม่ มาใส่ตรงนี้ ***
+    const scriptURL = 'ใส่_WEB_APP_URL_ของคุณที่นี่'; 
+
+    // ทันทีที่เปิดเว็บ ให้ไปดึงรายชื่อ 100 คนจาก Google Sheets มาใส่ใน Datalist
+    window.onload = function() {
+        const nameInput = document.getElementById('name');
+        fetch(scriptURL)
+            .then(response => response.json())
+            .then(names => {
+                const dataList = document.getElementById('nameList');
+                names.forEach(name => {
+                    let option = document.createElement('option');
+                    option.value = name;
+                    dataList.appendChild(option);
+                });
+                nameInput.placeholder = "พิมพ์ชื่อ หรือเลือกจากรายชื่อ";
+                nameInput.disabled = false; // ปลดล็อกให้กรอกได้เมื่อโหลดเสร็จ
+            })
+            .catch(error => {
+                nameInput.placeholder = "โหลดรายชื่อล้มเหลว กรุณาพิมพ์ชื่อเอง";
+                nameInput.disabled = false;
+            });
+    };
+
+    document.getElementById('reportForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const btn = document.getElementById('submitBtn');
+        btn.innerText = 'กำลังส่งข้อมูลและไฟล์ภาพ...';
+        btn.disabled = true;
+
+        const fileInput = document.getElementById('uploadFile');
+        const file = fileInput.files[0];
+
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const base64Data = e.target.result.split(',')[1]; 
+
+                const payload = {
+                    name: document.getElementById('name').value,
+                    position: document.getElementById('position').value,
+                    amphoe: document.getElementById('amphoe').value, // ส่งค่าอำเภอ
+                    report: document.getElementById('report').value,
+                    fileData: base64Data,
+                    mimeType: file.type
+                };
+
+                fetch(scriptURL, {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        alert('บันทึกรายงานผลเรียบร้อยแล้ว!');
+                        document.getElementById('reportForm').reset();
+                    }
+                    btn.innerText = 'ส่งรายงานผล';
+                    btn.disabled = false;
+                });
+            };
+            reader.readAsDataURL(file); 
+        }
+    });
+</script>
+</body>
+</html>
