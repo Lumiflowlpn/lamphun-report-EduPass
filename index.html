@@ -3,47 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบรายงานผลการลงทะเบียน Edu Pass</title>
+    <title>ระบบรายงานผลการปฏิบัติงาน</title>
     <style>
         body { font-family: 'Sarabun', sans-serif; background-color: #f4f7f6; padding: 20px; }
         .container { max-width: 500px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
         h2 { text-align: center; color: #333; }
         label { font-weight: bold; display: block; margin-top: 15px; }
-        input[type="text"], select, textarea, input[type="file"] { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
+        input[type="text"], select, input[type="file"] { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
         button { width: 100%; padding: 12px; background-color: #28a745; color: white; border: none; border-radius: 5px; font-size: 16px; margin-top: 20px; cursor: pointer; }
         button:disabled { background-color: #94d3a2; cursor: not-allowed; }
-        .loading { font-size: 0.9em; color: #666; margin-top: 5px; display: none; }
+        .auto-fill-note { font-size: 12px; color: #28a745; margin-top: 2px; display: block; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>ระบบรายงานผลการลงทะเบียน Edu Pass</h2>
+    <h2>ระบบรายงานผลการปฏิบัติงาน</h2>
     
     <form id="reportForm">
-        <!-- ใช้ input list คู่กับ datalist เพื่อให้พิมพ์ค้นหาชื่อได้ -->
         <label>ชื่อ-นามสกุล (พิมพ์เพื่อค้นหา):</label>
         <input type="text" id="name" list="nameList" placeholder="กำลังโหลดรายชื่อ..." required autocomplete="off" disabled>
-        <datalist id="nameList">
-            <!-- รายชื่อจะถูกดึงมาใส่ตรงนี้อัตโนมัติ -->
-        </datalist>
+        <datalist id="nameList"></datalist>
 
         <label>ตำแหน่ง:</label>
-        <select id="position" required>
-            <option value="">-- กรุณาเลือกตำแหน่ง --</option>
-            <option value="นักวิชาการสถิติ">นักวิชาการสถิติ</option>
-            <option value="เจ้าพนักงานสถิติ">เจ้าพนักงานสถิติ</option>
-            <option value="พนักงานราชการ">พนักงานราชการ</option>
-        </select>
+        <!-- เปลี่ยนจาก Select เป็น Input ธรรมดา -->
+        <input type="text" id="position" placeholder="จะขึ้นอัตโนมัติเมื่อเลือกชื่อ" required>
 
         <label>หน่วยงาน / สถานศึกษา:</label>
-        <input type="text" id="agency" placeholder="ระบุชื่อหน่วยงานหรือสถานศึกษา..." required>
-        
-        <!-- เพิ่มช่องเลือกอำเภอ -->
-        <label>รายงานผลหน่วยงาน/สถานศึกษา:</label>
+        <input type="text" id="agency" placeholder="จะขึ้นอัตโนมัติเมื่อเลือกชื่อ" required>
+
+        <label>รายงานผลพื้นที่อำเภอ:</label>
         <select id="amphoe" required>
-            <option value="">-- กรุณาเลือกหน่วยงาน/สถานศึกษา --</option>
-            <option value="จังหวัด">จังหวัด</option>
+            <option value="">-- กรุณาเลือกอำเภอ --</option>
             <option value="เมืองลำพูน">เมืองลำพูน</option>
             <option value="แม่ทา">แม่ทา</option>
             <option value="บ้านโฮ่ง">บ้านโฮ่ง</option>
@@ -55,13 +46,13 @@
         </select>
 
         <label>สถานะการดำเนินงาน:</label>
-            <select id="report" required>
-                <option value="">-- กรุณาเลือกสถานะ --</option>
-                <option value="ดำเนินการลงทะเบียนเข้าใช้งานแล้ว">ดำเนินการลงทะเบียนเข้าใช้งานแล้ว</option>
-                <option value="ยังไม่สามารถดำเนินงานการได้">ยังไม่สามารถดำเนินงานการได้</option>
-            </select></textarea>
+        <select id="report" required>
+            <option value="">-- กรุณาเลือกสถานะ --</option>
+            <option value="ดำเนินการลงทะเบียนเข้าใช้งานแล้ว">ดำเนินการลงทะเบียนเข้าใช้งานแล้ว</option>
+            <option value="ยังไม่สามารถดำเนินงานการได้">ยังไม่สามารถดำเนินงานการได้</option>
+        </select>
 
-        <label>แนบภาพถ่าย:</label>
+        <label>แนบภาพถ่ายหลักฐาน:</label>
         <input type="file" id="uploadFile" accept="image/*" required>
 
         <button type="submit" id="submitBtn">ส่งรายงานผล</button>
@@ -69,29 +60,51 @@
 </div>
 
 <script>
-    // *** นำ Web App URL อันใหม่ มาใส่ตรงนี้ ***
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbyrZw3xJ2oXwFoQwpxs0IevDrAFJaT3jlks8I7M7vA2uCnAaVOw4pqqmgZonqEpexAy/exec'; 
+    // *** นำ Web App URL อันใหม่ที่ Deploy มาใส่ตรงนี้ ***
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbwkEfNEZqsiNGtxSn5Vypnh_r3B7FO_ss8Z_nffKgLG3Xx84Ljwv48pNII6OfcyVutc/exec'; 
 
-    // ทันทีที่เปิดเว็บ ให้ไปดึงรายชื่อ 100 คนจาก Google Sheets มาใส่ใน Datalist
+    let employeeData = []; // ตัวแปรเก็บข้อมูลพนักงานทั้งหมด
+
     window.onload = function() {
         const nameInput = document.getElementById('name');
         fetch(scriptURL)
             .then(response => response.json())
-            .then(names => {
+            .then(data => {
+                employeeData = data; // เก็บข้อมูลที่โหลดมาไว้
                 const dataList = document.getElementById('nameList');
-                names.forEach(name => {
+                
+                data.forEach(emp => {
                     let option = document.createElement('option');
-                    option.value = name;
+                    option.value = emp.name;
                     dataList.appendChild(option);
                 });
+                
                 nameInput.placeholder = "พิมพ์ชื่อ หรือเลือกจากรายชื่อ";
-                nameInput.disabled = false; // ปลดล็อกให้กรอกได้เมื่อโหลดเสร็จ
+                nameInput.disabled = false;
             })
             .catch(error => {
-                nameInput.placeholder = "โหลดรายชื่อล้มเหลว กรุณาพิมพ์ชื่อเอง";
-                nameInput.disabled = false;
+                nameInput.placeholder = "โหลดข้อมูลล้มเหลว ลองรีเฟรชหน้าเว็บ";
             });
     };
+
+    // ฟังก์ชันตรวจจับการพิมพ์/เลือกชื่อ เพื่อเติมข้อมูลอัตโนมัติ
+    document.getElementById('name').addEventListener('input', function(e) {
+        const selectedName = e.target.value;
+        const positionInput = document.getElementById('position');
+        const agencyInput = document.getElementById('agency');
+        
+        // ค้นหาชื่อที่ตรงกับที่ผู้ใช้พิมพ์ในฐานข้อมูล
+        const foundEmp = employeeData.find(emp => emp.name === selectedName);
+        
+        if (foundEmp) {
+            positionInput.value = foundEmp.position || "";
+            agencyInput.value = foundEmp.agency || "";
+        } else {
+            // ถ้าลบชื่อออก หรือพิมพ์ชื่อใหม่ที่ไม่มีในระบบ ให้ล้างช่องทิ้งเพื่อให้กรอกเองได้
+            positionInput.value = "";
+            agencyInput.value = "";
+        }
+    });
 
     document.getElementById('reportForm').addEventListener('submit', function(e) {
         e.preventDefault();
@@ -110,8 +123,8 @@
                 const payload = {
                     name: document.getElementById('name').value,
                     position: document.getElementById('position').value,
-                    agency: document.getElementById('agency').value, // บรรทัดที่เพิ่มใหม่
-                    amphoe: document.getElementById('amphoe').value, // ส่งค่าอำเภอ
+                    agency: document.getElementById('agency').value,
+                    amphoe: document.getElementById('amphoe').value,
                     report: document.getElementById('report').value,
                     fileData: base64Data,
                     mimeType: file.type
@@ -126,6 +139,8 @@
                     if (data.status === 'success') {
                         alert('บันทึกรายงานผลเรียบร้อยแล้ว!');
                         document.getElementById('reportForm').reset();
+                    } else {
+                        alert('เกิดข้อผิดพลาด: ' + data.message);
                     }
                     btn.innerText = 'ส่งรายงานผล';
                     btn.disabled = false;
