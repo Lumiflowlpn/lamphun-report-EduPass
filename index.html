@@ -40,21 +40,8 @@
         <label>ตำแหน่ง:</label>
         <input type="text" id="position" placeholder="จะขึ้นอัตโนมัติเมื่อเลือกชื่อ" required>
 
-        <!-- ซ่อนช่องหน่วยงานไว้ (ลบ required ออกเพื่อไม่ให้บล็อกการส่ง) -->
-        <input type="hidden" id="agency">
-
-        <label>รายงานผลพื้นที่อำเภอ:</label>
-        <select id="amphoe" required>
-            <option value="">-- กรุณาเลือกอำเภอ --</option>
-            <option value="เมืองลำพูน">เมืองลำพูน</option>
-            <option value="แม่ทา">แม่ทา</option>
-            <option value="บ้านโฮ่ง">บ้านโฮ่ง</option>
-            <option value="ลี้">ลี้</option>
-            <option value="ทุ่งหัวช้าง">ทุ่งหัวช้าง</option>
-            <option value="ป่าซาง">ป่าซาง</option>
-            <option value="บ้านธิ">บ้านธิ</option>
-            <option value="เวียงหนองล่อง">เวียงหนองล่อง</option>
-        </select>
+        <label>หน่วยงาน / สถานศึกษา:</label>
+        <input type="text" id="agency" placeholder="จะขึ้นอัตโนมัติเมื่อเลือกชื่อ" required>
 
         <label>สถานะการดำเนินงาน:</label>
         <select id="report" required>
