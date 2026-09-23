@@ -4,8 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard ระบบรายงานผลการลงทะเบียน Edu Pass</title>
-    <!-- นำเข้า Chart.js สำหรับวาดกราฟ -->
+    <!-- นำเข้า Chart.js และ Plugin สำหรับแสดงตัวเลขบนกราฟ -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     <style>
         body { font-family: 'Sarabun', sans-serif; background-color: #f4f7f6; padding: 20px; }
         .container { max-width: 1200px; margin: 0 auto; }
@@ -19,7 +20,7 @@
         .incomplete { color: #dc3545; font-weight: bold; }
         .btn-view { padding: 5px 10px; background-color: #17a2b8; color: white; text-decoration: none; border-radius: 3px; font-size: 12px; }
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .chart-container { position: relative; height: 300px; width: 100%; display: flex; justify-content: center; }
+        .chart-container { position: relative; height: 350px; width: 100%; display: flex; justify-content: center; }
         @media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }
     </style>
 </head>
@@ -37,7 +38,7 @@
             </div>
         </div>
         <div class="card">
-            <h3>สัดส่วนสถานะการดำเนินงานภาพรวม</h3>
+            <h3>สัดส่วนความคืบหน้าภาพรวม (จากเป้าหมายทั้งหมด)</h3>
             <div class="chart-container">
                 <canvas id="statusChart"></canvas>
             </div>
@@ -45,40 +46,22 @@
     </div>
 
     <!-- ส่วนแสดงตารางสรุป -->
-    <div class="grid-2">
-        <!-- ตารางสรุปตามเป้าหมาย (เปรียบเทียบ) -->
-        <div class="card">
-            <h3>ความคืบหน้าภาพรวมเทียบเป้าหมาย</h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th>หน่วยงาน / สถานศึกษา</th>
-                        <th>เป้าหมาย (คน)</th>
-                        <th>รายงานแล้ว</th>
-                        <th>สถานะ</th>
-                    </tr>
-                </thead>
-                <tbody id="targetTable">
-                    <tr><td colspan="4" style="text-align:center;">กำลังโหลดข้อมูล...</td></tr>
-                </tbody>
-            </table>
-        </div>
-
-        <!-- ตารางสรุปจำนวนรายงานแยกตามหน่วยงาน (เรียงจากมากไปน้อย) -->
-        <div class="card">
-            <h3>จำนวนผู้รายงานแยกตามหน่วยงาน</h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th>หน่วยงาน / สถานศึกษา</th>
-                        <th>จำนวน (คน)</th>
-                    </tr>
-                </thead>
-                <tbody id="agencyTable">
-                    <tr><td colspan="2" style="text-align:center;">กำลังโหลดข้อมูล...</td></tr>
-                </tbody>
-            </table>
-        </div>
+    <div class="card" style="overflow-x:auto;">
+        <h3>ความคืบหน้าภาพรวมเทียบเป้าหมาย (รายหน่วยงาน)</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>หน่วยงาน / สถานศึกษา</th>
+                    <th>เป้าหมาย (คน)</th>
+                    <th>รายงานแล้ว (คน)</th>
+                    <th>ร้อยละ (%)</th>
+                    <th>สถานะ</th>
+                </tr>
+            </thead>
+            <tbody id="targetTable">
+                <tr><td colspan="5" style="text-align:center;">กำลังโหลดข้อมูล...</td></tr>
+            </tbody>
+        </table>
     </div>
 
     <!-- ตารางรายละเอียดข้อมูลทั้งหมด -->
@@ -103,6 +86,9 @@
 </div>
 
 <script>
+    // ลงทะเบียน Plugin Datalabels ให้ Chart.js รู้จัก
+    Chart.register(ChartDataLabels);
+
     // *** Web App URL ***
     const scriptURL = 'https://script.google.com/macros/s/AKfycbwkEfNEZqsiNGtxSn5Vypnh_r3B7FO_ss8Z_nffKgLG3Xx84Ljwv48pNII6OfcyVutc/exec'; 
 
@@ -113,36 +99,29 @@
                 const reports = data.reports;
                 const targets = data.targets;
 
-                // 1. ประมวลผลเป้าหมาย (อ้างอิงชื่อหน่วยงานจากคอลัมน์ A ในชีต "เป้าหมาย")
                 let targetData = {};
+                let totalTargetAll = 0;
+                let totalActualAll = 0;
+
+                // ประมวลผลเป้าหมาย
                 targets.forEach(t => { 
-                    // t.amphoe ดึงค่ามาจากคอลัมน์แรกสุดในชีตเป้าหมาย (ซึ่งเราปรับใช้เป็นชื่อหน่วยงานแทน)
                     let agencyName = t.amphoe.trim(); 
                     targetData[agencyName] = { target: t.target, actual: 0 }; 
+                    totalTargetAll += t.target; // รวมเป้าหมายทั้งหมด
                 });
                 
-                let agencyData = {}; // นับจำนวนตามหน่วยงานทั่วไป
-                let statusCount = { success: 0, fail: 0 }; // นับสถานะสำหรับทำกราฟโดนัท
-                
+                // นับจำนวนผู้รายงาน
                 reports.forEach(r => {
                     let agencyName = r.agency ? r.agency.trim() : "-";
-
-                    // นับยอดเข้าตารางเปรียบเทียบเป้าหมาย (ถ้าหน่วยงานนั้นตั้งเป้าหมายไว้)
                     if (targetData[agencyName] !== undefined) {
                         targetData[agencyName].actual++;
-                    }
-                    
-                    // นับยอดเข้าตารางหน่วยงานรวม
-                    if (!agencyData[agencyName]) agencyData[agencyName] = 0;
-                    agencyData[agencyName]++;
-
-                    // นับสถานะ
-                    if (r.status === "ดำเนินการลงทะเบียนเข้าใช้งานแล้ว") {
-                        statusCount.success++;
-                    } else {
-                        statusCount.fail++;
+                        totalActualAll++; // รวมยอดที่รายงานแล้วทั้งหมด
                     }
                 });
+
+                // คำนวณคนที่ยังไม่ได้รายงาน (ไม่ให้ติดลบ)
+                let totalNotReported = totalTargetAll - totalActualAll;
+                if(totalNotReported < 0) totalNotReported = 0;
 
                 // --- แสดงตารางเป้าหมาย ---
                 const targetTable = document.getElementById('targetTable');
@@ -153,7 +132,7 @@
                 let chartActuals = [];
 
                 if (Object.keys(targetData).length === 0) {
-                    targetTable.innerHTML = '<tr><td colspan="4" style="text-align:center;">ยังไม่ได้ตั้งค่าเป้าหมายใน Google Sheets</td></tr>';
+                    targetTable.innerHTML = '<tr><td colspan="5" style="text-align:center;">ยังไม่ได้ตั้งค่าเป้าหมายใน Google Sheets</td></tr>';
                 } else {
                     for (let agency in targetData) {
                         let d = targetData[agency];
@@ -161,10 +140,15 @@
                         let statusText = isComplete ? 'ครบถ้วน' : `ขาดอีก ${d.target - d.actual}`;
                         let statusClass = isComplete ? 'complete' : 'incomplete';
                         
+                        // คำนวณเปอร์เซ็นต์
+                        let pct = d.target > 0 ? ((d.actual / d.target) * 100).toFixed(1) : 0;
+                        if(pct > 100) pct = 100; // ล็อกไว้ไม่ให้เกินร้อย
+                        
                         targetTable.innerHTML += `<tr>
                             <td>${agency}</td>
                             <td style="text-align:center;">${d.target}</td>
                             <td style="text-align:center; font-weight:bold;">${d.actual}</td>
+                            <td style="text-align:center;">${pct}%</td>
                             <td class="${statusClass}">${statusText}</td>
                         </tr>`;
 
@@ -181,42 +165,71 @@
                     data: {
                         labels: chartLabels,
                         datasets: [
-                            { label: 'เป้าหมาย (คน)', data: chartTargets, backgroundColor: '#007bff' },
-                            { label: 'รายงานแล้ว (คน)', data: chartActuals, backgroundColor: '#28a745' }
+                            { 
+                                label: 'เป้าหมาย (คน)', 
+                                data: chartTargets, 
+                                backgroundColor: '#cccccc' 
+                            },
+                            { 
+                                label: 'รายงานแล้ว (คน)', 
+                                data: chartActuals, 
+                                backgroundColor: '#007bff' 
+                            }
                         ]
                     },
-                    options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+                    options: { 
+                        maintainAspectRatio: false, 
+                        scales: { 
+                            y: { beginAtZero: true, grace: '10%' } 
+                        },
+                        plugins: {
+                            datalabels: {
+                                anchor: 'end',
+                                align: 'top',
+                                font: { weight: 'bold' },
+                                formatter: function(value, context) {
+                                    // ถ้าเป็นแท่ง "รายงานแล้ว" (index 1) ให้คำนวณโชว์ %
+                                    if (context.datasetIndex === 1) {
+                                        let targetVal = context.chart.data.datasets[0].data[context.dataIndex];
+                                        if(targetVal > 0) {
+                                            let pct = ((value / targetVal) * 100).toFixed(0);
+                                            return value + ' (' + pct + '%)';
+                                        }
+                                    }
+                                    return value;
+                                }
+                            }
+                        }
+                    }
                 });
 
-                // --- วาดกราฟโดนัท (สถานะ) ---
+                // --- วาดกราฟโดนัท (เป้าหมายรวมทั้งหมด) ---
                 new Chart(document.getElementById('statusChart'), {
-                    type: 'doughnut',
+                    type: 'pie',
                     data: {
-                        labels: ['ลงทะเบียนแล้ว', 'ยังไม่สามารถทำได้'],
+                        labels: ['รายงานแล้ว', 'ยังไม่ได้รายงาน'],
                         datasets: [{
-                            data: [statusCount.success, statusCount.fail],
+                            data: [totalActualAll, totalNotReported],
                             backgroundColor: ['#28a745', '#dc3545']
                         }]
                     },
-                    options: { maintainAspectRatio: false }
+                    options: { 
+                        maintainAspectRatio: false,
+                        plugins: {
+                            datalabels: {
+                                color: '#fff',
+                                font: { weight: 'bold', size: 14 },
+                                formatter: function(value, context) {
+                                    let total = totalTargetAll;
+                                    if(total === 0) return '0%';
+                                    let pct = Math.round((value / total) * 100);
+                                    return value + ' คน\n(' + pct + '%)';
+                                },
+                                textAlign: 'center'
+                            }
+                        }
+                    }
                 });
-
-                // --- แสดงตารางสรุปจำนวนผู้รายงานทั้งหมด ---
-                const agencyTable = document.getElementById('agencyTable');
-                agencyTable.innerHTML = '';
-                let agencyArray = Object.keys(agencyData).map(key => { return {name: key, count: agencyData[key]} });
-                agencyArray.sort((a, b) => b.count - a.count); // เรียงจากมากไปน้อย
-                
-                if (agencyArray.length === 0) {
-                    agencyTable.innerHTML = '<tr><td colspan="2" style="text-align:center;">ยังไม่มีข้อมูล</td></tr>';
-                } else {
-                    agencyArray.forEach(ag => {
-                        agencyTable.innerHTML += `<tr>
-                            <td>${ag.name}</td>
-                            <td style="text-align:center; font-weight:bold;">${ag.count}</td>
-                        </tr>`;
-                    });
-                }
 
                 // --- แสดงรายละเอียดล่าสุด ---
                 const dataTable = document.getElementById('dataTable');
@@ -239,7 +252,7 @@
             })
             .catch(error => {
                 console.error(error);
-                document.getElementById('targetTable').innerHTML = '<tr><td colspan="4" style="text-align:center; color:red;">โหลดข้อมูลล้มเหลว กรุณารีเฟรชหน้าเว็บ</td></tr>';
+                document.getElementById('targetTable').innerHTML = '<tr><td colspan="5" style="text-align:center; color:red;">โหลดข้อมูลล้มเหลว กรุณารีเฟรชหน้าเว็บ</td></tr>';
             });
     };
 </script>
