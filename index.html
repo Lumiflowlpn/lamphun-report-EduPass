@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบรายงานผลการปฏิบัติงาน</title>
+    <title>ระบบรายงานผลการลงทะเบียน Edu Pass สำนักงาน สกร.ประจำจังหวัดลำพูน</title>
     <style>
         body { font-family: 'Sarabun', sans-serif; background-color: #f4f7f6; padding: 20px; }
         .container { max-width: 500px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
@@ -12,13 +12,24 @@
         input[type="text"], select, input[type="file"] { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
         button { width: 100%; padding: 12px; background-color: #28a745; color: white; border: none; border-radius: 5px; font-size: 16px; margin-top: 20px; cursor: pointer; }
         button:disabled { background-color: #94d3a2; cursor: not-allowed; }
-        .auto-fill-note { font-size: 12px; color: #28a745; margin-top: 2px; display: block; }
+        
+        /* ตกแต่งปุ่ม Dashboard */
+        .btn-dashboard { display: block; width: 100%; padding: 12px; background-color: #007bff; color: white; text-align: center; text-decoration: none; border-radius: 5px; font-size: 16px; font-weight: bold; margin-bottom: 20px; box-sizing: border-box; }
+        .btn-dashboard:hover { background-color: #0056b3; }
+        
+        /* ตกแต่งกล่องรูปภาพตัวอย่าง */
+        .sample-box { margin-top: 15px; padding: 10px; background-color: #e9ecef; border-radius: 5px; border: 1px dashed #6c757d; }
+        .sample-box img { width: 100%; border-radius: 5px; margin-top: 10px; }
+        .sample-title { font-size: 14px; font-weight: bold; color: #495057; text-align: center; display: block; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>ระบบรายงานผลการปฏิบัติงาน</h2>
+    <!-- ปุ่มสำหรับลิงก์ไปหน้า Dashboard -->
+    <a href="dashboard.html" class="btn-dashboard">📊 ดูรายงานสรุปผลการลงทะเบียน Edu Pass</a>
+
+    <h2>ระบบรายงานผลการลงทะเบียน<br><small>Edu Pass</small></h2>
     
     <form id="reportForm">
         <label>ชื่อ-นามสกุล (พิมพ์เพื่อค้นหา):</label>
@@ -26,24 +37,10 @@
         <datalist id="nameList"></datalist>
 
         <label>ตำแหน่ง:</label>
-        <!-- เปลี่ยนจาก Select เป็น Input ธรรมดา -->
         <input type="text" id="position" placeholder="จะขึ้นอัตโนมัติเมื่อเลือกชื่อ" required>
 
         <label>หน่วยงาน / สถานศึกษา:</label>
         <input type="text" id="agency" placeholder="จะขึ้นอัตโนมัติเมื่อเลือกชื่อ" required>
-
-        <label>รายงานผลพื้นที่อำเภอ:</label>
-        <select id="amphoe" required>
-            <option value="">-- กรุณาเลือกอำเภอ --</option>
-            <option value="เมืองลำพูน">เมืองลำพูน</option>
-            <option value="แม่ทา">แม่ทา</option>
-            <option value="บ้านโฮ่ง">บ้านโฮ่ง</option>
-            <option value="ลี้">ลี้</option>
-            <option value="ทุ่งหัวช้าง">ทุ่งหัวช้าง</option>
-            <option value="ป่าซาง">ป่าซาง</option>
-            <option value="บ้านธิ">บ้านธิ</option>
-            <option value="เวียงหนองล่อง">เวียงหนองล่อง</option>
-        </select>
 
         <label>สถานะการดำเนินงาน:</label>
         <select id="report" required>
@@ -53,6 +50,13 @@
         </select>
 
         <label>แนบภาพถ่ายหลักฐาน:</label>
+        <!-- กล่องแสดงภาพตัวอย่าง -->
+        <div class="sample-box">
+            <span class="sample-title">📌 ตัวอย่างไฟล์ภาพหลักฐานที่ต้องแนบ</span>
+            <!-- หากคุณมีรูประบบจริง ให้นำลิงก์รูปมาใส่แทนที่ลิงก์ https://via.placeholder.com... ด้านล่างนี้ครับ -->
+            <img src="https://via.placeholder.com/400x200?text=ตัวอย่างภาพหน้าจอลงทะเบียนสำเร็จ+Edu+Pass" alt="ตัวอย่างหลักฐาน">
+        </div>
+        
         <input type="file" id="uploadFile" accept="image/*" required>
 
         <button type="submit" id="submitBtn">ส่งรายงานผล</button>
@@ -60,17 +64,17 @@
 </div>
 
 <script>
-    // *** นำ Web App URL อันใหม่ที่ Deploy มาใส่ตรงนี้ ***
+    // *** นำ Web App URL ของคุณมาใส่ตรงนี้เหมือนเดิม ***
     const scriptURL = 'https://script.google.com/macros/s/AKfycbwkEfNEZqsiNGtxSn5Vypnh_r3B7FO_ss8Z_nffKgLG3Xx84Ljwv48pNII6OfcyVutc/exec'; 
 
-    let employeeData = []; // ตัวแปรเก็บข้อมูลพนักงานทั้งหมด
+    let employeeData = [];
 
     window.onload = function() {
         const nameInput = document.getElementById('name');
         fetch(scriptURL)
             .then(response => response.json())
             .then(data => {
-                employeeData = data; // เก็บข้อมูลที่โหลดมาไว้
+                employeeData = data;
                 const dataList = document.getElementById('nameList');
                 
                 data.forEach(emp => {
@@ -87,20 +91,17 @@
             });
     };
 
-    // ฟังก์ชันตรวจจับการพิมพ์/เลือกชื่อ เพื่อเติมข้อมูลอัตโนมัติ
     document.getElementById('name').addEventListener('input', function(e) {
         const selectedName = e.target.value;
         const positionInput = document.getElementById('position');
         const agencyInput = document.getElementById('agency');
         
-        // ค้นหาชื่อที่ตรงกับที่ผู้ใช้พิมพ์ในฐานข้อมูล
         const foundEmp = employeeData.find(emp => emp.name === selectedName);
         
         if (foundEmp) {
             positionInput.value = foundEmp.position || "";
             agencyInput.value = foundEmp.agency || "";
         } else {
-            // ถ้าลบชื่อออก หรือพิมพ์ชื่อใหม่ที่ไม่มีในระบบ ให้ล้างช่องทิ้งเพื่อให้กรอกเองได้
             positionInput.value = "";
             agencyInput.value = "";
         }
@@ -142,6 +143,12 @@
                     } else {
                         alert('เกิดข้อผิดพลาด: ' + data.message);
                     }
+                    btn.innerText = 'ส่งรายงานผล';
+                    btn.disabled = false;
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('ส่งข้อมูลไม่สำเร็จ กรุณาตรวจสอบอินเทอร์เน็ตแล้วลองใหม่');
                     btn.innerText = 'ส่งรายงานผล';
                     btn.disabled = false;
                 });
