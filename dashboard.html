@@ -4,19 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard ระบบรายงานผลการลงทะเบียน Edu Pass</title>
+    <!-- นำเข้า Chart.js สำหรับวาดกราฟ -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body { font-family: 'Sarabun', sans-serif; background-color: #f4f7f6; padding: 20px; }
         .container { max-width: 1200px; margin: 0 auto; }
         .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        h2, h3 { color: #333; text-align: center; }
+        h2, h3 { color: #333; text-align: center; margin-bottom: 15px;}
         table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
         th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
         th { background-color: #007bff; color: white; text-align: center; }
         tr:nth-child(even) { background-color: #f9f9f9; }
-        .complete { color: green; font-weight: bold; }
-        .incomplete { color: red; font-weight: bold; }
+        .complete { color: #28a745; font-weight: bold; }
+        .incomplete { color: #dc3545; font-weight: bold; }
         .btn-view { padding: 5px 10px; background-color: #17a2b8; color: white; text-decoration: none; border-radius: 3px; font-size: 12px; }
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .chart-container { position: relative; height: 300px; width: 100%; display: flex; justify-content: center; }
         @media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }
     </style>
 </head>
@@ -25,26 +28,43 @@
 <div class="container">
     <h2>📊 Dashboard สรุปผลการลงทะเบียน Edu Pass</h2>
     
+    <!-- ส่วนแสดงกราฟ -->
     <div class="grid-2">
-        <!-- ตารางสรุปตามเป้าหมาย -->
         <div class="card">
-            <h3>ความคืบหน้าภาพรวม (หน่วยงาน/สถานศึกษ)</h3>
+            <h3>เปรียบเทียบเป้าหมายและผลการรายงาน</h3>
+            <div class="chart-container">
+                <canvas id="targetChart"></canvas>
+            </div>
+        </div>
+        <div class="card">
+            <h3>สัดส่วนสถานะการดำเนินงานภาพรวม</h3>
+            <div class="chart-container">
+                <canvas id="statusChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- ส่วนแสดงตารางสรุป -->
+    <div class="grid-2">
+        <!-- ตารางสรุปตามเป้าหมาย (เปรียบเทียบ) -->
+        <div class="card">
+            <h3>ความคืบหน้าภาพรวมเทียบเป้าหมาย</h3>
             <table>
                 <thead>
                     <tr>
-                        <th>หน่วยงาน/สถานศึกษ</th>
+                        <th>หน่วยงาน / สถานศึกษา</th>
                         <th>เป้าหมาย (คน)</th>
                         <th>รายงานแล้ว</th>
                         <th>สถานะ</th>
                     </tr>
                 </thead>
-                <tbody id="amphoeTable">
-                    <tr><td colspan="4" style="text-align:center;">กำลังโหลด...</td></tr>
+                <tbody id="targetTable">
+                    <tr><td colspan="4" style="text-align:center;">กำลังโหลดข้อมูล...</td></tr>
                 </tbody>
             </table>
         </div>
 
-        <!-- ตารางสรุปตามหน่วยงาน/สถานศึกษา -->
+        <!-- ตารางสรุปจำนวนรายงานแยกตามหน่วยงาน (เรียงจากมากไปน้อย) -->
         <div class="card">
             <h3>จำนวนผู้รายงานแยกตามหน่วยงาน</h3>
             <table>
@@ -55,7 +75,7 @@
                     </tr>
                 </thead>
                 <tbody id="agencyTable">
-                    <tr><td colspan="2" style="text-align:center;">กำลังโหลด...</td></tr>
+                    <tr><td colspan="2" style="text-align:center;">กำลังโหลดข้อมูล...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -68,22 +88,22 @@
             <thead>
                 <tr>
                     <th>วัน/เวลา</th>
-                    <th>หน่วยงาน/สถานศึกษ</th>
-                    <th>หน่วยงาน</th>
+                    <th>หน่วยงาน / สถานศึกษา</th>
                     <th>ชื่อ-นามสกุล</th>
+                    <th>ตำแหน่ง</th>
                     <th>สถานะ</th>
                     <th>หลักฐาน</th>
                 </tr>
             </thead>
             <tbody id="dataTable">
-                <tr><td colspan="6" style="text-align:center;">กำลังโหลด...</td></tr>
+                <tr><td colspan="6" style="text-align:center;">กำลังโหลดข้อมูล...</td></tr>
             </tbody>
         </table>
     </div>
 </div>
 
 <script>
-    // *** นำ Web App URL อันใหม่มาใส่ตรงนี้ ***
+    // *** Web App URL ***
     const scriptURL = 'https://script.google.com/macros/s/AKfycbwkEfNEZqsiNGtxSn5Vypnh_r3B7FO_ss8Z_nffKgLG3Xx84Ljwv48pNII6OfcyVutc/exec'; 
 
     window.onload = function() {
@@ -93,46 +113,99 @@
                 const reports = data.reports;
                 const targets = data.targets;
 
-                // 1. ประมวลผลและสร้างตารางอำเภอ
-                let amphoeData = {};
+                // 1. ประมวลผลเป้าหมาย (อ้างอิงชื่อหน่วยงานจากคอลัมน์ A ในชีต "เป้าหมาย")
+                let targetData = {};
                 targets.forEach(t => { 
-                    amphoeData[t.amphoe] = { target: t.target, actual: 0 }; 
+                    // t.amphoe ดึงค่ามาจากคอลัมน์แรกสุดในชีตเป้าหมาย (ซึ่งเราปรับใช้เป็นชื่อหน่วยงานแทน)
+                    let agencyName = t.amphoe.trim(); 
+                    targetData[agencyName] = { target: t.target, actual: 0 }; 
                 });
                 
-                let agencyData = {}; // สำหรับนับหน่วยงาน
+                let agencyData = {}; // นับจำนวนตามหน่วยงานทั่วไป
+                let statusCount = { success: 0, fail: 0 }; // นับสถานะสำหรับทำกราฟโดนัท
                 
                 reports.forEach(r => {
-                    // นับยอดเข้าอำเภอ
-                    if (amphoeData[r.amphoe]) amphoeData[r.amphoe].actual++;
+                    let agencyName = r.agency ? r.agency.trim() : "-";
+
+                    // นับยอดเข้าตารางเปรียบเทียบเป้าหมาย (ถ้าหน่วยงานนั้นตั้งเป้าหมายไว้)
+                    if (targetData[agencyName] !== undefined) {
+                        targetData[agencyName].actual++;
+                    }
                     
-                    // นับยอดเข้าหน่วยงาน
-                    if (!agencyData[r.agency]) agencyData[r.agency] = 0;
-                    agencyData[r.agency]++;
+                    // นับยอดเข้าตารางหน่วยงานรวม
+                    if (!agencyData[agencyName]) agencyData[agencyName] = 0;
+                    agencyData[agencyName]++;
+
+                    // นับสถานะ
+                    if (r.status === "ดำเนินการลงทะเบียนเข้าใช้งานแล้ว") {
+                        statusCount.success++;
+                    } else {
+                        statusCount.fail++;
+                    }
                 });
 
-                // แสดงผลตาราง
-                const amphoeTable = document.getElementById('amphoeTable');
-                amphoeTable.innerHTML = '';
-                for (let amp in amphoeData) {
-                    let d = amphoeData[amp];
-                    let isComplete = d.actual >= d.target;
-                    let statusText = isComplete ? 'ครบถ้วน' : `ขาดอีก ${d.target - d.actual} คน`;
-                    let statusClass = isComplete ? 'complete' : 'incomplete';
-                    
-                    amphoeTable.innerHTML += `<tr>
-                        <td>${amp}</td>
-                        <td style="text-align:center;">${d.target}</td>
-                        <td style="text-align:center; font-weight:bold;">${d.actual}</td>
-                        <td class="${statusClass}">${statusText}</td>
-                    </tr>`;
+                // --- แสดงตารางเป้าหมาย ---
+                const targetTable = document.getElementById('targetTable');
+                targetTable.innerHTML = '';
+                
+                let chartLabels = [];
+                let chartTargets = [];
+                let chartActuals = [];
+
+                if (Object.keys(targetData).length === 0) {
+                    targetTable.innerHTML = '<tr><td colspan="4" style="text-align:center;">ยังไม่ได้ตั้งค่าเป้าหมายใน Google Sheets</td></tr>';
+                } else {
+                    for (let agency in targetData) {
+                        let d = targetData[agency];
+                        let isComplete = d.actual >= d.target;
+                        let statusText = isComplete ? 'ครบถ้วน' : `ขาดอีก ${d.target - d.actual}`;
+                        let statusClass = isComplete ? 'complete' : 'incomplete';
+                        
+                        targetTable.innerHTML += `<tr>
+                            <td>${agency}</td>
+                            <td style="text-align:center;">${d.target}</td>
+                            <td style="text-align:center; font-weight:bold;">${d.actual}</td>
+                            <td class="${statusClass}">${statusText}</td>
+                        </tr>`;
+
+                        // เก็บข้อมูลเตรียมวาดกราฟแท่ง
+                        chartLabels.push(agency);
+                        chartTargets.push(d.target);
+                        chartActuals.push(d.actual);
+                    }
                 }
 
-                // 2. แสดงผลตารางหน่วยงาน
+                // --- วาดกราฟแท่ง (เป้าหมาย vs จริง) ---
+                new Chart(document.getElementById('targetChart'), {
+                    type: 'bar',
+                    data: {
+                        labels: chartLabels,
+                        datasets: [
+                            { label: 'เป้าหมาย (คน)', data: chartTargets, backgroundColor: '#007bff' },
+                            { label: 'รายงานแล้ว (คน)', data: chartActuals, backgroundColor: '#28a745' }
+                        ]
+                    },
+                    options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+                });
+
+                // --- วาดกราฟโดนัท (สถานะ) ---
+                new Chart(document.getElementById('statusChart'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['ลงทะเบียนแล้ว', 'ยังไม่สามารถทำได้'],
+                        datasets: [{
+                            data: [statusCount.success, statusCount.fail],
+                            backgroundColor: ['#28a745', '#dc3545']
+                        }]
+                    },
+                    options: { maintainAspectRatio: false }
+                });
+
+                // --- แสดงตารางสรุปจำนวนผู้รายงานทั้งหมด ---
                 const agencyTable = document.getElementById('agencyTable');
                 agencyTable.innerHTML = '';
-                // แปลง object เป็น array เพื่อเรียงลำดับจากมากไปน้อย
                 let agencyArray = Object.keys(agencyData).map(key => { return {name: key, count: agencyData[key]} });
-                agencyArray.sort((a, b) => b.count - a.count);
+                agencyArray.sort((a, b) => b.count - a.count); // เรียงจากมากไปน้อย
                 
                 if (agencyArray.length === 0) {
                     agencyTable.innerHTML = '<tr><td colspan="2" style="text-align:center;">ยังไม่มีข้อมูล</td></tr>';
@@ -140,29 +213,33 @@
                     agencyArray.forEach(ag => {
                         agencyTable.innerHTML += `<tr>
                             <td>${ag.name}</td>
-                            <td style="text-align:center;">${ag.count}</td>
+                            <td style="text-align:center; font-weight:bold;">${ag.count}</td>
                         </tr>`;
                     });
                 }
 
-                // 3. แสดงผลรายละเอียดล่าสุด
+                // --- แสดงรายละเอียดล่าสุด ---
                 const dataTable = document.getElementById('dataTable');
                 dataTable.innerHTML = '';
-                reports.forEach(row => {
-                    let statusClass = row.status === "ดำเนินการลงทะเบียนเข้าใช้งานแล้ว" ? "complete" : "incomplete";
-                    dataTable.innerHTML += `<tr>
-                        <td>${row.timestamp}</td>
-                        <td>${row.amphoe}</td>
-                        <td>${row.agency}</td>
-                        <td>${row.name}</td>
-                        <td class="${statusClass}">${row.status}</td>
-                        <td style="text-align:center;"><a href="${row.imageUrl}" target="_blank" class="btn-view">ดูรูป</a></td>
-                    </tr>`;
-                });
+                if(reports.length === 0) {
+                    dataTable.innerHTML = '<tr><td colspan="6" style="text-align:center;">ยังไม่มีผู้รายงาน</td></tr>';
+                } else {
+                    reports.forEach(row => {
+                        let statusClass = row.status === "ดำเนินการลงทะเบียนเข้าใช้งานแล้ว" ? "complete" : "incomplete";
+                        dataTable.innerHTML += `<tr>
+                            <td>${row.timestamp}</td>
+                            <td>${row.agency}</td>
+                            <td>${row.name}</td>
+                            <td>${row.position}</td>
+                            <td class="${statusClass}">${row.status}</td>
+                            <td style="text-align:center;"><a href="${row.imageUrl}" target="_blank" class="btn-view">ดูรูป</a></td>
+                        </tr>`;
+                    });
+                }
             })
             .catch(error => {
                 console.error(error);
-                document.getElementById('amphoeTable').innerHTML = '<tr><td colspan="4" style="text-align:center; color:red;">โหลดข้อมูลล้มเหลว</td></tr>';
+                document.getElementById('targetTable').innerHTML = '<tr><td colspan="4" style="text-align:center; color:red;">โหลดข้อมูลล้มเหลว กรุณารีเฟรชหน้าเว็บ</td></tr>';
             });
     };
 </script>
