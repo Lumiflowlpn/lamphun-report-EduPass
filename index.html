@@ -7,30 +7,27 @@
     <style>
         body { font-family: 'Sarabun', sans-serif; background-color: #f4f7f6; padding: 20px; }
         .container { max-width: 500px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-        h2 { text-align: center; color: #333; }
+        h2 { text-align: center; color: #333; margin-bottom: 20px; }
         label { font-weight: bold; display: block; margin-top: 15px; }
         input[type="text"], select, input[type="file"] { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
         
-        /* ปุ่มส่งข้อมูล */
-        button { width: 100%; padding: 12px; background-color: #28a745; color: white; border: none; border-radius: 5px; font-size: 16px; margin-top: 20px; cursor: pointer; font-weight: bold; }
-        button:disabled { background-color: #94d3a2; cursor: not-allowed; }
+        button { width: 100%; padding: 12px; background-color: #7dcea0; color: white; border: none; border-radius: 5px; font-size: 16px; margin-top: 25px; cursor: pointer; font-weight: bold; }
+        button:hover { background-color: #27ae60; }
+        button:disabled { background-color: #a3e4d7; cursor: not-allowed; }
         
-        /* ส่วนของปุ่มลิงก์ด้านล่าง */
         .bottom-links { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
         .btn-link { display: block; width: 100%; padding: 10px; text-align: center; text-decoration: none; border-radius: 5px; font-size: 15px; font-weight: bold; box-sizing: border-box; border: 2px solid #007bff; color: #007bff; background: white; transition: 0.3s; }
         .btn-link:hover { background-color: #007bff; color: white; }
         
-        /* ตกแต่งกล่องรูปภาพตัวอย่าง */
         .sample-box { margin-top: 25px; padding: 15px; background-color: #e9ecef; border-radius: 5px; border: 1px dashed #6c757d; text-align: center; }
         .sample-title { font-size: 14px; font-weight: bold; color: #495057; display: block; margin-bottom: 10px; }
-        /* ปรับขนาดภาพให้เล็กลง */
         .sample-box img { max-width: 250px; width: 100%; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>ระบบรายงานผลการลงทะเบียน<br><small>Edu Pass</small></h2>
+    <h2>ระบบรายงานผลการลงทะเบียน<br>Edu Pass</h2>
     
     <form id="reportForm">
         <label>ชื่อ-นามสกุล (พิมพ์เพื่อค้นหา):</label>
@@ -38,10 +35,10 @@
         <datalist id="nameList"></datalist>
 
         <label>ตำแหน่ง:</label>
-        <input type="text" id="position" placeholder="จะขึ้นอัตโนมัติเมื่อเลือกชื่อ" required>
+        <input type="text" id="position" required>
 
         <label>หน่วยงาน / สถานศึกษา:</label>
-        <input type="text" id="agency" placeholder="จะขึ้นอัตโนมัติเมื่อเลือกชื่อ" required>
+        <input type="text" id="agency" required>
 
         <label>สถานะการดำเนินงาน:</label>
         <select id="report" required>
@@ -53,21 +50,18 @@
         <label>แนบภาพถ่ายหลักฐาน:</label>
         <input type="file" id="uploadFile" accept="image/*" required>
 
-        <!-- ปุ่มส่งข้อมูล -->
         <button type="submit" id="submitBtn">ส่งรายงานผล</button>
     </form>
 
-    <!-- ส่วนลิงก์ด้านล่างปุ่มส่ง -->
     <div class="bottom-links">
-        <!-- *** นำลิงก์คู่มือมาใส่แทนคำว่า ใส่ลิงก์คู่มือตรงนี้ *** -->
-        <a href="ใส่ลิงก์คู่มือตรงนี้" target="_blank" class="btn-link">📖 คู่มือการลงทะเบียน Edu Pass</a>
+        <a href="https://drive.google.com/file/d/1Tink6szmCclzAvW0iGZSSrtjfdB0rx1A/view?usp=sharing" target="_blank" class="btn-link">📖 คู่มือการลงทะเบียน Edu Pass</a>
         <a href="dashboard.html" class="btn-link">📊 ดูรายงานสรุปผลการลงทะเบียน</a>
     </div>
 
-    <!-- กล่องแสดงภาพตัวอย่าง (อยู่ล่างสุด) -->
     <div class="sample-box">
         <span class="sample-title">📌 ตัวอย่างไฟล์ภาพหลักฐานที่ต้องแนบ</span>
-        <img src="https://i.postimg.cc/htdjx9BF/274910.png" alt="ตัวอย่างหลักฐาน">
+        <!-- รูปภาพตัวอย่าง -->
+        <img src="https://i.postimg.cc/mZhYmRQQ/lamphun-example.png" alt="ตัวอย่างหลักฐาน">
     </div>
 </div>
 
@@ -133,7 +127,7 @@
                     name: document.getElementById('name').value,
                     position: document.getElementById('position').value,
                     agency: document.getElementById('agency').value,
-                    amphoe: document.getElementById('amphoe').value,
+                    amphoe: "-", // ส่งค่าอำเภอเป็นขีดกลางแทน เพื่อไม่ให้ Google Sheets รวน
                     report: document.getElementById('report').value,
                     fileData: base64Data,
                     mimeType: file.type
