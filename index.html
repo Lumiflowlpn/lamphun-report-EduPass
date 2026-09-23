@@ -10,25 +10,26 @@
         h2 { text-align: center; color: #333; }
         label { font-weight: bold; display: block; margin-top: 15px; }
         input[type="text"], select, input[type="file"] { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; background-color: #28a745; color: white; border: none; border-radius: 5px; font-size: 16px; margin-top: 20px; cursor: pointer; }
+        
+        /* ปุ่มส่งข้อมูล */
+        button { width: 100%; padding: 12px; background-color: #28a745; color: white; border: none; border-radius: 5px; font-size: 16px; margin-top: 20px; cursor: pointer; font-weight: bold; }
         button:disabled { background-color: #94d3a2; cursor: not-allowed; }
         
-        /* ตกแต่งปุ่ม Dashboard */
-        .btn-dashboard { display: block; width: 100%; padding: 12px; background-color: #007bff; color: white; text-align: center; text-decoration: none; border-radius: 5px; font-size: 16px; font-weight: bold; margin-bottom: 20px; box-sizing: border-box; }
-        .btn-dashboard:hover { background-color: #0056b3; }
+        /* ส่วนของปุ่มลิงก์ด้านล่าง */
+        .bottom-links { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
+        .btn-link { display: block; width: 100%; padding: 10px; text-align: center; text-decoration: none; border-radius: 5px; font-size: 15px; font-weight: bold; box-sizing: border-box; border: 2px solid #007bff; color: #007bff; background: white; transition: 0.3s; }
+        .btn-link:hover { background-color: #007bff; color: white; }
         
         /* ตกแต่งกล่องรูปภาพตัวอย่าง */
-        .sample-box { margin-top: 15px; padding: 10px; background-color: #e9ecef; border-radius: 5px; border: 1px dashed #6c757d; }
-        .sample-box img { width: 100%; border-radius: 5px; margin-top: 10px; }
-        .sample-title { font-size: 14px; font-weight: bold; color: #495057; text-align: center; display: block; }
+        .sample-box { margin-top: 25px; padding: 15px; background-color: #e9ecef; border-radius: 5px; border: 1px dashed #6c757d; text-align: center; }
+        .sample-title { font-size: 14px; font-weight: bold; color: #495057; display: block; margin-bottom: 10px; }
+        /* ปรับขนาดภาพให้เล็กลง */
+        .sample-box img { max-width: 250px; width: 100%; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <!-- ปุ่มสำหรับลิงก์ไปหน้า Dashboard -->
-    <a href="dashboard.html" class="btn-dashboard">📊 ดูรายงานสรุปผลการลงทะเบียน Edu Pass</a>
-
     <h2>ระบบรายงานผลการลงทะเบียน<br><small>Edu Pass</small></h2>
     
     <form id="reportForm">
@@ -39,8 +40,21 @@
         <label>ตำแหน่ง:</label>
         <input type="text" id="position" placeholder="จะขึ้นอัตโนมัติเมื่อเลือกชื่อ" required>
 
-        <label>หน่วยงาน / สถานศึกษา:</label>
-        <input type="text" id="agency" placeholder="จะขึ้นอัตโนมัติเมื่อเลือกชื่อ" required>
+        <!-- ซ่อนช่องหน่วยงานไว้ (ลบ required ออกเพื่อไม่ให้บล็อกการส่ง) -->
+        <input type="hidden" id="agency">
+
+        <label>รายงานผลพื้นที่อำเภอ:</label>
+        <select id="amphoe" required>
+            <option value="">-- กรุณาเลือกอำเภอ --</option>
+            <option value="เมืองลำพูน">เมืองลำพูน</option>
+            <option value="แม่ทา">แม่ทา</option>
+            <option value="บ้านโฮ่ง">บ้านโฮ่ง</option>
+            <option value="ลี้">ลี้</option>
+            <option value="ทุ่งหัวช้าง">ทุ่งหัวช้าง</option>
+            <option value="ป่าซาง">ป่าซาง</option>
+            <option value="บ้านธิ">บ้านธิ</option>
+            <option value="เวียงหนองล่อง">เวียงหนองล่อง</option>
+        </select>
 
         <label>สถานะการดำเนินงาน:</label>
         <select id="report" required>
@@ -50,21 +64,28 @@
         </select>
 
         <label>แนบภาพถ่ายหลักฐาน:</label>
-        <!-- กล่องแสดงภาพตัวอย่าง -->
-        <div class="sample-box">
-            <span class="sample-title">📌 ตัวอย่างไฟล์ภาพหลักฐานที่ต้องแนบ</span>
-            <!-- หากคุณมีรูประบบจริง ให้นำลิงก์รูปมาใส่แทนที่ลิงก์ https://via.placeholder.com... ด้านล่างนี้ครับ -->
-            <img src="https://i.postimg.cc/htdjx9BF/274910.png" alt="ตัวอย่างหลักฐาน">
-        </div>
-        
         <input type="file" id="uploadFile" accept="image/*" required>
 
+        <!-- ปุ่มส่งข้อมูล -->
         <button type="submit" id="submitBtn">ส่งรายงานผล</button>
     </form>
+
+    <!-- ส่วนลิงก์ด้านล่างปุ่มส่ง -->
+    <div class="bottom-links">
+        <!-- *** นำลิงก์คู่มือมาใส่แทนคำว่า ใส่ลิงก์คู่มือตรงนี้ *** -->
+        <a href="ใส่ลิงก์คู่มือตรงนี้" target="_blank" class="btn-link">📖 คู่มือการลงทะเบียน Edu Pass</a>
+        <a href="dashboard.html" class="btn-link">📊 ดูรายงานสรุปผลการลงทะเบียน</a>
+    </div>
+
+    <!-- กล่องแสดงภาพตัวอย่าง (อยู่ล่างสุด) -->
+    <div class="sample-box">
+        <span class="sample-title">📌 ตัวอย่างไฟล์ภาพหลักฐานที่ต้องแนบ</span>
+        <img src="https://i.postimg.cc/htdjx9BF/274910.png" alt="ตัวอย่างหลักฐาน">
+    </div>
 </div>
 
 <script>
-    // *** นำ Web App URL ของคุณมาใส่ตรงนี้เหมือนเดิม ***
+    // Web App URL ของคุณ
     const scriptURL = 'https://script.google.com/macros/s/AKfycbwkEfNEZqsiNGtxSn5Vypnh_r3B7FO_ss8Z_nffKgLG3Xx84Ljwv48pNII6OfcyVutc/exec'; 
 
     let employeeData = [];
