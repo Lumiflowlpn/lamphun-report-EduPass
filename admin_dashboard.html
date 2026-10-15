@@ -69,7 +69,207 @@
                 <tr>
                     <th>หน่วยงาน/สถานศึกษา</th>
                     <th>เป้าหมาย (คน)</th>
-                    <th>รายงานแล้ว (คน)</th>
+                    <th>รายงานแล้ว (คน)</th><!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบรายงานผลการลงทะเบียน Edu Pass สำนักงาน สกร.ประจำจังหวัดลำพูน</title>
+    <!-- เพิ่มไลบรารี SweetAlert2 สำหรับทำป็อปอัปสวยงาม -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        body { font-family: 'Sarabun', sans-serif; background-color: #f4f7f6; padding: 20px; }
+        .container { max-width: 500px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #333; margin-bottom: 20px; }
+        label { font-weight: bold; display: block; margin-top: 15px; }
+        input[type="text"], select, input[type="file"] { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
+        
+        button { width: 100%; padding: 12px; background-color: #7dcea0; color: white; border: none; border-radius: 5px; font-size: 16px; margin-top: 25px; cursor: pointer; font-weight: bold; }
+        button:hover { background-color: #27ae60; }
+        button:disabled { background-color: #a3e4d7; cursor: not-allowed; }
+        
+        .bottom-links { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
+        .btn-link { display: block; width: 100%; padding: 10px; text-align: center; text-decoration: none; border-radius: 5px; font-size: 15px; font-weight: bold; box-sizing: border-box; border: 2px solid #007bff; color: #007bff; background: white; transition: 0.3s; }
+        .btn-link:hover { background-color: #007bff; color: white; }
+        
+        .sample-box { margin-top: 25px; padding: 15px; background-color: #e9ecef; border-radius: 5px; border: 1px dashed #6c757d; text-align: center; }
+        .sample-title { font-size: 14px; font-weight: bold; color: #495057; display: block; margin-bottom: 10px; }
+        .sample-box img { max-width: 250px; width: 100%; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>ระบบรายงานผลการลงทะเบียน<br>Edu Pass</h2>
+    
+    <form id="reportForm">
+        <label>ชื่อ-นามสกุล (พิมพ์เพื่อค้นหา):</label>
+        <input type="text" id="name" list="nameList" placeholder="กำลังโหลดรายชื่อ..." required autocomplete="off" disabled>
+        <datalist id="nameList"></datalist>
+
+        <label>ตำแหน่ง:</label>
+        <input type="text" id="position" required>
+
+        <label>หน่วยงาน / สถานศึกษา:</label>
+        <input type="text" id="agency" required>
+
+        <label>สถานะการดำเนินงาน:</label>
+        <select id="report" required>
+            <option value="">-- กรุณาเลือกสถานะ --</option>
+            <option value="ดำเนินการลงทะเบียนเข้าใช้งานแล้ว">ดำเนินการลงทะเบียนเข้าใช้งานแล้ว</option>
+            <option value="ยังไม่สามารถดำเนินงานการได้">ยังไม่สามารถดำเนินงานการได้</option>
+        </select>
+
+        <label>แนบภาพถ่ายหลักฐาน:</label>
+        <input type="file" id="uploadFile" accept="image/*" required>
+
+        <button type="submit" id="submitBtn">ส่งรายงานผล</button>
+    </form>
+
+    <div class="bottom-links">
+        <a href="https://drive.google.com/file/d/1Tink6szmCclzAvW0iGZSSrtjfdB0rx1A/view?usp=sharing" target="_blank" class="btn-link">📖 คู่มือการลงทะเบียน Edu Pass</a>
+        <a href="https://docs.google.com/spreadsheets/d/e/2PACX-1vRMWJfcDmOxV2OidbDpehLTyRVFpGkgpYs-aJ4khAh_aIGHnvlwz6Fj1b2BUsSy050ULGFoYdBeCqzs/pubhtml?gid=221590208&single=true" target="_blank" class="btn-link">📋 รายชื่อกลุ่มเป้าหมาย Edu Pass</a>
+        <a href="admin_dashboard.html" class="btn-link">📊 ดูรายงานสรุปผลการลงทะเบียน</a>
+    </div>
+
+    <div class="sample-box">
+        <span class="sample-title">📌 ตัวอย่างไฟล์ภาพหลักฐานที่ต้องแนบ</span>
+        <img src="https://i.postimg.cc/htdjx9BF/274910.png" alt="ตัวอย่างหลักฐาน">
+    </div>
+</div>
+
+<script>
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbxYFzebkKbViisZGwuKbkrsjZGbcJ9kGJgakOYJPp0gwu3g0QKFGwNXRlpp7YCcFhA/exec'; 
+
+    let employeeData = [];
+
+    window.onload = function() {
+        const nameInput = document.getElementById('name');
+        fetch(scriptURL)
+            .then(response => response.json())
+            .then(data => {
+                employeeData = data;
+                const dataList = document.getElementById('nameList');
+                data.forEach(emp => {
+                    let option = document.createElement('option');
+                    option.value = emp.name;
+                    dataList.appendChild(option);
+                });
+                nameInput.placeholder = "พิมพ์ชื่อ หรือเลือกจากรายชื่อ";
+                nameInput.disabled = false;
+            })
+            .catch(error => {
+                nameInput.placeholder = "โหลดข้อมูลล้มเหลว ลองรีเฟรชหน้าเว็บ";
+            });
+    };
+
+    document.getElementById('name').addEventListener('input', function(e) {
+        const selectedName = e.target.value;
+        const positionInput = document.getElementById('position');
+        const agencyInput = document.getElementById('agency');
+        
+        const foundEmp = employeeData.find(emp => emp.name === selectedName);
+        if (foundEmp) {
+            positionInput.value = foundEmp.position || "";
+            agencyInput.value = foundEmp.agency || "";
+        } else {
+            positionInput.value = "";
+            agencyInput.value = "";
+        }
+    });
+
+    document.getElementById('reportForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const btn = document.getElementById('submitBtn');
+        btn.disabled = true;
+
+        // 1. เรียกป็อปอัปแสดงสถานะกำลังโหลด
+        Swal.fire({
+            title: 'กำลังบันทึกข้อมูล...',
+            text: 'กรุณารอสักครู่ ระบบกำลังบีบอัดภาพและส่งข้อมูล',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
+        const fileInput = document.getElementById('uploadFile');
+        const file = fileInput.files[0];
+
+        if (file) {
+            const reader = new FileReader();
+            reader.readAsDataURL(file); 
+            
+            reader.onload = function(event) {
+                // ระบบบีบอัดภาพ
+                const img = new Image();
+                img.src = event.target.result;
+                
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 800; 
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > MAX_WIDTH) {
+                        height = Math.round((height * MAX_WIDTH) / width);
+                        width = MAX_WIDTH;
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                    const base64Data = compressedDataUrl.split(',')[1];
+
+                    const payload = {
+                        name: document.getElementById('name').value,
+                        position: document.getElementById('position').value,
+                        agency: document.getElementById('agency').value,
+                        amphoe: "-", 
+                        report: document.getElementById('report').value,
+                        fileData: base64Data,
+                        mimeType: 'image/jpeg'
+                    };
+
+                    fetch(scriptURL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        body: JSON.stringify(payload)
+                    })
+                    .then(() => {
+                        // 2. เรียกป็อปอัปเมื่อบันทึกสำเร็จ
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'บันทึกสำเร็จ!',
+                            text: 'ระบบได้รับรายงานผลของคุณเรียบร้อยแล้ว',
+                            confirmButtonText: 'ตกลง',
+                            confirmButtonColor: '#28a745'
+                        });
+                        document.getElementById('reportForm').reset();
+                        btn.disabled = false;
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        // เรียกป็อปอัปเมื่อเกิดข้อผิดพลาด
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'เกิดข้อผิดพลาด',
+                            text: 'ส่งข้อมูลไม่สำเร็จ กรุณาตรวจสอบอินเทอร์เน็ตแล้วลองใหม่',
+                            confirmButtonText: 'ตกลง',
+                            confirmButtonColor: '#dc3545'
+                        });
+                        btn.disabled = false;
+                    });
+                };
+            };
+        }
+    });
+</script>
+</body>
+</html>
                     <th>ร้อยละ (%)</th>
                     <th>สถานะ</th>
                 </tr>
