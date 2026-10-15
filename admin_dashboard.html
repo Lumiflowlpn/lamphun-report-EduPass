@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบรายงานผล - สำหรับผู้บริหาร</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <style>
+        body { font-family: 'Sarabun', sans-serif; background-color: #f4f7f6; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        h2, h3 { color: #333; text-align: center; margin-bottom: 15px;}
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background-color: #007bff; color: white; text-align: center; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        .complete { color: #28a745; font-weight: bold; }
+        .incomplete { color: #dc3545; font-weight: bold; }
+        .btn-view { padding: 5px 10px; background-color: #17a2b8; color: white; text-decoration: none; border-radius: 3px; font-size: 12px; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .chart-container { position: relative; height: 350px; width: 100%; display: flex; justify-content: center; }
+        
+        /* สไตล์สำหรับหน้า Login */
+        .login-box { max-width: 400px; margin: 80px auto; text-align: center; }
+        .login-box input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 16px; text-align: center;}
+        .login-box button { width: 100%; padding: 12px; background-color: #007bff; color: white; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; font-weight: bold; }
+        .login-box button:hover { background-color: #0056b3; }
+        .error-msg { color: red; font-size: 14px; display: none; margin-top: 10px; }
+        
+        @media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+
+<!-- หน้าจอ Login (แสดงเป็นอันดับแรก) -->
+<div id="loginSection" class="card login-box">
+    <h3>🔒 เข้าสู่ระบบรายงานผล Edu Pass</h3>
+    <p style="color: #666; font-size:14px;">กรุณากรอกรหัสผ่านเพื่อดูข้อมูล</p>
+    <input type="password" id="passwordInput" placeholder="ระบุรหัสผ่าน">
+    <button onclick="checkLogin()">เข้าสู่ระบบ</button>
+    <div id="loginError" class="error-msg">รหัสผ่านไม่ถูกต้อง!</div>
+</div>
+
+<!-- หน้าจอ Dashboard (ซ่อนไว้จนกว่าจะ Login สำเร็จ) -->
+<div id="dashboardSection" class="container" style="display: none;">
+    <h2 id="dashTitle">📊 Dashboard สรุปผลการลงทะเบียน Edu Pass</h2>
+    
+    <div class="grid-2">
+        <div class="card">
+            <h3 id="pieTitle">สัดส่วนความคืบหน้าภาพรวม</h3>
+            <div class="chart-container">
+                <canvas id="statusChart"></canvas>
+            </div>
+        </div>
+        <div class="card">
+            <h3 id="barTitle">เปรียบเทียบเป้าหมายและผลการรายงาน</h3>
+            <div class="chart-container">
+                <canvas id="targetChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- ตารางสรุปเป้าหมาย -->
+    <div class="card" style="overflow-x:auto;">
+        <h3>ความคืบหน้าเทียบเป้าหมาย</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>หน่วยงาน/สถานศึกษา</th>
+                    <th>เป้าหมาย (คน)</th>
+                    <th>รายงานแล้ว (คน)</th>
+                    <th>ร้อยละ (%)</th>
+                    <th>สถานะ</th>
+                </tr>
+            </thead>
+            <tbody id="targetTable">
+                <tr><td colspan="5" style="text-align:center;">กำลังโหลดข้อมูล...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- ตารางรายละเอียด -->
+    <div class="card" style="overflow-x:auto;">
+        <h3>รายละเอียดการรายงานล่าสุด</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>วัน/เวลา</th>
+                    <th>หน่วยงาน/สถานศึกษา</th>
+                    <th>ชื่อ-นามสกุล</th>
+                    <th>ตำแหน่ง</th>
+                    <th>สถานะ</th>
+                    <th>หลักฐาน</th>
+                </tr>
+            </thead>
+            <tbody id="dataTable">
+                <tr><td colspan="6" style="text-align:center;">กำลังโหลดข้อมูล...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    Chart.register(ChartDataLabels);
+
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbxYFzebkKbViisZGwuKbkrsjZGbcJ9kGJgakOYJPp0gwu3g0QKFGwNXRlpp7YCcFhA/exec'; 
+    let currentChartStatus = null;
+    let currentChartTarget = null;
+
+    // --- ระบบกำหนดสิทธิ์และรหัสผ่าน ---
+    const accessRoles = {
+        'admin1234': 'all',          // รหัสผ่านดูภาพรวมทั้งหมด (จังหวัด)
+        'muang01': 'เมืองลำพูน',       // รหัสผ่านสำหรับอำเภอเมือง
+        'maetha02': 'แม่ทา',         // รหัสผ่านสำหรับอำเภอแม่ทา
+        'banhong03': 'บ้านโฮ่ง',
+        'lee04': 'ลี้',
+        'thunghua05': 'ทุ่งหัวช้าง',
+        'pasang06': 'ป่าซาง',
+        'banthi07': 'บ้านธิ',
+        'wiang08': 'เวียงหนองล่อง'
+    };
+
+    function checkLogin() {
+        const pwd = document.getElementById('passwordInput').value.trim();
+        const role = accessRoles[pwd];
+
+        if (role) {
+            // ถ้ารหัสผ่านถูกต้อง
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('dashboardSection').style.display = 'block';
+            document.getElementById('loginError').style.display = 'none';
+            
+            // ตั้งค่าชื่อหัวข้อให้ตรงกับสิทธิ์การเข้าถึง
+            if (role === 'all') {
+                document.getElementById('dashTitle').innerHTML = '📊 Dashboard สรุปผล Edu Pass<br><small>ภาพรวมระดับจังหวัด</small>';
+                document.getElementById('pieTitle').innerText = 'สัดส่วนความคืบหน้า (ภาพรวมทั้งจังหวัด)';
+                document.getElementById('barTitle').innerText = 'เปรียบเทียบเป้าหมาย (ทุกหน่วยงาน)';
+            } else {
+                document.getElementById('dashTitle').innerHTML = `📊 Dashboard สรุปผล Edu Pass<br><small>อำเภอ${role}</small>`;
+                document.getElementById('pieTitle').innerText = `สัดส่วนความคืบหน้า (อำเภอ${role})`;
+                document.getElementById('barTitle').innerText = `เปรียบเทียบเป้าหมาย (อำเภอ${role})`;
+            }
+
+            // โหลดข้อมูลตามสิทธิ์
+            loadDashboardData(role);
+        } else {
+            // ถ้ารหัสผิด
+            document.getElementById('loginError').style.display = 'block';
+        }
+    }
+
+    // กดปุ่ม Enter เพื่อ Login ได้
+    document.getElementById("passwordInput").addEventListener("keypress", function(event) {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            checkLogin();
+        }
+    });
+
+    // --- ฟังก์ชันดึงและประมวลผลข้อมูล ---
+    function loadDashboardData(userRole) {
+        fetch(scriptURL + "?action=getReport")
+            .then(response => response.json())
+            .then(data => {
+                let reports = data.reports;
+                let targets = data.targets;
+
+                // 1. กรองข้อมูลตามสิทธิ์ (ถ้าไม่ใช่ 'all' ให้เอาเฉพาะอำเภอตัวเอง)
+                if (userRole !== 'all') {
+                    reports = reports.filter(r => r.agency && r.agency.includes(userRole));
+                    targets = targets.filter(t => t.amphoe && t.amphoe.includes(userRole));
+                }
+
+                let targetData = {};
+                let totalTargetAll = 0;
+                let totalActualAll = 0;
+
+                // เตรียมข้อมูลเป้าหมาย
+                targets.forEach(t => { 
+                    let ampName = t.amphoe.trim(); 
+                    targetData[ampName] = { target: t.target, actual: 0 }; 
+                    totalTargetAll += t.target; 
+                });
+                
+                // นับยอดคนรายงานที่มีสถานะ "ดำเนินการลงทะเบียนเข้าใช้งานแล้ว"
+                reports.forEach(r => {
+                    let agencyName = r.agency ? r.agency.trim() : "-";
+                    if (targetData[agencyName] !== undefined && r.status === "ดำเนินการลงทะเบียนเข้าใช้งานแล้ว") {
+                        targetData[agencyName].actual++;
+                        totalActualAll++;
+                    }
+                });
+
+                let totalNotReported = totalTargetAll - totalActualAll;
+                if(totalNotReported < 0) totalNotReported = 0;
+
+                // --- แสดงตารางเป้าหมาย ---
+                const targetTable = document.getElementById('targetTable');
+                targetTable.innerHTML = '';
+                
+                let chartLabels = [];
+                let chartTargets = [];
+                let chartActuals = [];
+
+                if (Object.keys(targetData).length === 0) {
+                    targetTable.innerHTML = '<tr><td colspan="5" style="text-align:center;">ไม่พบข้อมูลเป้าหมาย</td></tr>';
+                } else {
+                    for (let amp in targetData) {
+                        let d = targetData[amp];
+                        let isComplete = d.actual >= d.target;
+                        let statusText = isComplete ? 'ครบถ้วน' : `ขาดอีก ${d.target - d.actual}`;
+                        let statusClass = isComplete ? 'complete' : 'incomplete';
+                        
+                        let pct = d.target > 0 ? ((d.actual / d.target) * 100).toFixed(1) : 0;
+                        if(pct > 100) pct = 100;
+                        
+                        targetTable.innerHTML += `<tr>
+                            <td>${amp}</td>
+                            <td style="text-align:center;">${d.target}</td>
+                            <td style="text-align:center; font-weight:bold;">${d.actual}</td>
+                            <td style="text-align:center;">${pct}%</td>
+                            <td class="${statusClass}">${statusText}</td>
+                        </tr>`;
+
+                        chartLabels.push(amp);
+                        chartTargets.push(d.target);
+                        chartActuals.push(d.actual);
+                    }
+                }
+
+                // วาดกราฟโดนัท
+                const ctxStatus = document.getElementById('statusChart').getContext('2d');
+                if(currentChartStatus) currentChartStatus.destroy(); // ลบกราฟเก่าถ้ามี
+                currentChartStatus = new Chart(ctxStatus, {
+                    type: 'pie',
+                    data: {
+                        labels: ['รายงานแล้ว', 'ยังไม่ได้รายงาน'],
+                        datasets: [{
+                            data: [totalActualAll, totalNotReported],
+                            backgroundColor: ['#28a745', '#dc3545']
+                        }]
+                    },
+                    options: { 
+                        maintainAspectRatio: false,
+                        plugins: {
+                            datalabels: {
+                                color: '#fff', font: { weight: 'bold', size: 14 }, textAlign: 'center',
+                                formatter: function(value) {
+                                    let total = totalTargetAll;
+                                    if(total === 0) return '0%';
+                                    let pct = Math.round((value / total) * 100);
+                                    return value + ' คน\n(' + pct + '%)';
+                                }
+                            }
+                        }
+                    }
+                });
+
+                // วาดกราฟแท่ง
+                const ctxTarget = document.getElementById('targetChart').getContext('2d');
+                if(currentChartTarget) currentChartTarget.destroy();
+                currentChartTarget = new Chart(ctxTarget, {
+                    type: 'bar',
+                    data: {
+                        labels: chartLabels,
+                        datasets: [
+                            { label: 'เป้าหมาย (คน)', data: chartTargets, backgroundColor: '#cccccc' },
+                            { label: 'รายงานแล้ว (คน)', data: chartActuals, backgroundColor: '#007bff' }
+                        ]
+                    },
+                    options: { 
+                        maintainAspectRatio: false, scales: { y: { beginAtZero: true, grace: '10%' } },
+                        plugins: {
+                            datalabels: {
+                                anchor: 'end', align: 'top', font: { weight: 'bold' },
+                                formatter: function(value, context) {
+                                    if (context.datasetIndex === 1) {
+                                        let targetVal = context.chart.data.datasets[0].data[context.dataIndex];
+                                        if(targetVal > 0) {
+                                            let pct = ((value / targetVal) * 100).toFixed(0);
+                                            return value + ' (' + pct + '%)';
+                                        }
+                                    }
+                                    return value;
+                                }
+                            }
+                        }
+                    }
+                });
+
+                // --- แสดงตารางข้อมูลล่าสุด ---
+                const dataTable = document.getElementById('dataTable');
+                dataTable.innerHTML = '';
+                if(reports.length === 0) {
+                    dataTable.innerHTML = '<tr><td colspan="6" style="text-align:center;">ยังไม่มีผู้รายงาน</td></tr>';
+                } else {
+                    reports.forEach(row => {
+                        let statusClass = row.status === "ดำเนินการลงทะเบียนเข้าใช้งานแล้ว" ? "complete" : "incomplete";
+                        dataTable.innerHTML += `<tr>
+                            <td>${row.timestamp}</td>
+                            <td>${row.agency}</td>
+                            <td>${row.name}</td>
+                            <td>${row.position}</td>
+                            <td class="${statusClass}">${row.status}</td>
+                            <td style="text-align:center;"><a href="${row.imageUrl}" target="_blank" class="btn-view">ดูรูป</a></td>
+                        </tr>`;
+                    });
+                }
+            })
+            .catch(error => {
+                console.error(error);
+                document.getElementById('targetTable').innerHTML = '<tr><td colspan="5" style="text-align:center; color:red;">โหลดข้อมูลล้มเหลว กรุณารีเฟรชหน้าเว็บ</td></tr>';
+            });
+    }
+</script>
+</body>
+</html>
