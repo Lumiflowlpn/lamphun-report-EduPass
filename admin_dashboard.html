@@ -33,26 +33,16 @@
 <div id="loginSection" class="card login-box">
     <h3>🔒 เข้าสู่ระบบผู้บริหาร</h3>
     <input type="password" id="passwordInput" placeholder="ระบุรหัสผ่าน">
-    <button onclick="checkLogin()">เข้าสู่ระบบ</button>
-</div>
-
-<div id="dashboardSection" class="container" style="display: none;">
-    <h2 id="dashTitle">📊 Dashboard สรุปผล Edu Pass</h2>
     
-    <div class="grid-2">
-        <div class="card">
-            <h3 id="pieTitle">สัดส่วนความคืบหน้าภาพรวม</h3>
-            <div class="chart-container">
-                <canvas id="statusChart"></canvas>
-            </div>
-        </div>
-        <div class="card">
-            <h3 id="barTitle">เปรียบเทียบเป้าหมายและผลการรายงาน</h3>
-            <div class="chart-container">
-                <canvas id="targetChart"></canvas>
-            </div>
-        </div>
+    <!-- เพิ่มกล่องติ๊กแสดงรหัสผ่าน -->
+    <div style="text-align: left; margin-top: -5px; margin-bottom: 15px;">
+        <input type="checkbox" id="showPwd" onclick="togglePassword()" style="width: auto; margin-right: 5px; cursor: pointer;">
+        <label for="showPwd" style="display: inline; font-size: 14px; font-weight: normal; cursor: pointer; color: #555;">แสดงรหัสผ่าน</label>
     </div>
+
+    <button onclick="checkLogin()">เข้าสู่ระบบ</button>
+    <div id="loginError" class="error-msg">รหัสผ่านไม่ถูกต้อง!</div>
+</div>
     
     <div class="card" style="overflow-x:auto;">
         <h3>ความคืบหน้าเทียบเป้าหมาย</h3>
@@ -117,16 +107,13 @@
         'pasang06': 'ป่าซาง', 'banthi07': 'บ้านธิ', 'wiang08': 'เวียงหนองล่อง'
     };
 
-    function checkLogin() {
-        const pwd = document.getElementById('passwordInput').value.trim();
-        globalRole = accessRoles[pwd];
-        if (globalRole) {
-            document.getElementById('loginSection').style.display = 'none';
-            document.getElementById('dashboardSection').style.display = 'block';
-            document.getElementById('dashTitle').innerHTML = globalRole === 'all' ? '📊 ภาพรวมระดับจังหวัด' : `📊 อำเภอ${globalRole}`;
-            fetchData();
+    // ฟังก์ชันสลับการแสดงรหัสผ่าน
+    function togglePassword() {
+        const pwdInput = document.getElementById('passwordInput');
+        if (pwdInput.type === "password") {
+            pwdInput.type = "text";
         } else {
-            Swal.fire('ผิดพลาด', 'รหัสผ่านไม่ถูกต้อง', 'error');
+            pwdInput.type = "password";
         }
     }
 
