@@ -28,15 +28,19 @@
     <h2>ระบบรายงานผลการลงทะเบียน<br>Edu Pass</h2>
     
     <form id="reportForm">
-        <label>ชื่อ-นามสกุล (พิมพ์เพื่อค้นหา):</label>
-        <input type="text" id="name" list="nameList" placeholder="กำลังโหลดข้อมูล..." required autocomplete="off" disabled>
+        <!-- 1. หน่วยงาน -->
+        <label>หน่วยงาน / สถานศึกษา:</label>
+        <input type="text" id="agency" list="agencyList" placeholder="กำลังโหลดข้อมูล..." required autocomplete="off" disabled>
+        <datalist id="agencyList"></datalist>
+
+        <!-- 2. ชื่อ-นามสกุล -->
+        <label>ชื่อ-นามสกุล:</label>
+        <input type="text" id="name" list="nameList" placeholder="กรุณาเลือกหน่วยงานก่อน" required autocomplete="off" disabled>
         <datalist id="nameList"></datalist>
 
+        <!-- 3. ตำแหน่ง -->
         <label>ตำแหน่ง:</label>
-        <input type="text" id="position" required>
-
-        <label>หน่วยงาน / สถานศึกษา:</label>
-        <input type="text" id="agency" required>
+        <input type="text" id="position" placeholder="ตำแหน่งจะแสดงอัตโนมัติ" required>
 
         <label>แนบภาพถ่ายหลักฐาน:</label>
         <input type="file" id="uploadFile" accept="image/*" required>
@@ -44,12 +48,14 @@
         <button type="submit" id="submitBtn">ส่งรายงานผล</button>
     </form>
 
+    <!-- ส่วนที่นำกลับมา: ปุ่มลิงก์ด้านล่าง -->
     <div class="bottom-links">
         <a href="https://drive.google.com/file/d/1Tink6szmCclzAvW0iGZSSrtjfdB0rx1A/view?usp=sharing" target="_blank" class="btn-link">📖 คู่มือการลงทะเบียน Edu Pass</a>
         <a href="https://docs.google.com/spreadsheets/d/e/2PACX-1vRMWJfcDmOxV2OidbDpehLTyRVFpGkgpYs-aJ4khAh_aIGHnvlwz6Fj1b2BUsSy050ULGFoYdBeCqzs/pubhtml?gid=221590208&single=true" target="_blank" class="btn-link">📋 รายชื่อกลุ่มเป้าหมาย Edu Pass</a>
         <a href="admin_dashboard.html" class="btn-link">📊 ดูรายงานสรุปผลการลงทะเบียน</a>
     </div>
 
+    <!-- ส่วนที่นำกลับมา: กล่องภาพตัวอย่าง -->
     <div class="sample-box">
         <span class="sample-title">📌 ตัวอย่างไฟล์ภาพหลักฐานที่ต้องแนบ</span>
         <img src="https://i.postimg.cc/htdjx9BF/274910.png" alt="ตัวอย่างหลักฐาน">
@@ -57,71 +63,76 @@
 </div>
 
 <script>
-    // *** เปลี่ยนเป็น Web App URL ใหม่ของคุณ ***
+    // *** นำ Web App URL ของคุณที่ Deploy ใหม่มาใส่ที่นี่ ***
     const scriptURL = 'https://script.google.com/macros/s/AKfycbyiTzoycC5tsWoa1JG2Ng0JzHUX0yF0ATphyfbF3pmjQ9eVrWUILnybKMgwxOYHPYPS/exec'; 
 
     let employeeData = [];
     let reportedNames = []; 
 
-    function populateDatalist(employees) {
-        const dataList = document.getElementById('nameList');
-        dataList.innerHTML = ''; 
-        employees.forEach(emp => {
-            let option = document.createElement('option');
-            option.value = emp.name;
-            dataList.appendChild(option);
-        });
-        document.getElementById('name').placeholder = "พิมพ์ชื่อ หรือเลือกจากรายชื่อ";
-        document.getElementById('name').disabled = false;
-    }
-
     window.onload = function() {
-        // --- ระบบ Caching: โหลดรายชื่อที่จำไว้ในเครื่องมาแสดงผลทันที ---
-        const cachedEmp = localStorage.getItem('eduPass_emp');
-        const cachedRep = localStorage.getItem('eduPass_rep');
-        if (cachedEmp) {
-            employeeData = JSON.parse(cachedEmp);
-            reportedNames = cachedRep ? JSON.parse(cachedRep) : [];
-            populateDatalist(employeeData);
-        }
-
-        // โหลดข้อมูลล่าสุดจาก Google Sheets เบื้องหลัง
         fetch(scriptURL)
             .then(response => response.json())
             .then(data => {
                 employeeData = data.employees;
                 reportedNames = data.reportedNames;
-                // อัปเดตข้อมูลความจำในเครื่อง
-                localStorage.setItem('eduPass_emp', JSON.stringify(employeeData));
-                localStorage.setItem('eduPass_rep', JSON.stringify(reportedNames));
-                populateDatalist(employeeData);
+                
+                // ดึงชื่อหน่วยงานที่ไม่ซ้ำกันมาทำตัวเลือก
+                const uniqueAgencies = [...new Set(employeeData.map(emp => emp.agency))];
+                const agencyList = document.getElementById('agencyList');
+                uniqueAgencies.forEach(ag => {
+                    let option = document.createElement('option');
+                    option.value = ag;
+                    agencyList.appendChild(option);
+                });
+                
+                const agencyInput = document.getElementById('agency');
+                agencyInput.placeholder = "พิมพ์หรือเลือกหน่วยงาน";
+                agencyInput.disabled = false;
             })
-            .catch(error => console.error("อัปเดตข้อมูลเบื้องหลังล้มเหลว", error));
+            .catch(error => console.error("โหลดข้อมูลล้มเหลว"));
     };
 
-    document.getElementById('name').addEventListener('input', function(e) {
-        const selectedName = e.target.value;
-        const positionInput = document.getElementById('position');
-        const agencyInput = document.getElementById('agency');
+    // เมื่อเลือกหน่วยงาน ให้กรองรายชื่อเฉพาะหน่วยงานนั้น
+    document.getElementById('agency').addEventListener('input', function(e) {
+        const selectedAgency = e.target.value;
+        const dataList = document.getElementById('nameList');
+        dataList.innerHTML = ''; 
         
-        const foundEmp = employeeData.find(emp => emp.name === selectedName);
-        if (foundEmp) {
-            positionInput.value = foundEmp.position || "";
-            agencyInput.value = foundEmp.agency || "";
-            
-            if (reportedNames.includes(selectedName)) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'แจ้งเตือน!',
-                    text: 'บุคคลนี้ได้ทำการส่งรายงานผลเข้ามาในระบบแล้ว คุณต้องการรายงานผลทับซ้ำอีกครั้งหรือไม่?',
-                    confirmButtonText: 'รับทราบ',
-                    confirmButtonColor: '#f39c12'
-                });
-            }
+        const filteredEmp = employeeData.filter(emp => emp.agency === selectedAgency);
+        filteredEmp.forEach(emp => {
+            let option = document.createElement('option');
+            option.value = emp.name;
+            dataList.appendChild(option);
+        });
+
+        const nameInput = document.getElementById('name');
+        nameInput.disabled = false;
+        nameInput.placeholder = "พิมพ์หรือเลือกรายชื่อ";
+        nameInput.value = "";
+        document.getElementById('position').value = "";
+    });
+
+    // ตรวจสอบชื่อซ้ำ และดึงตำแหน่ง
+    document.getElementById('name').addEventListener('input', function(e) {
+        const selectedName = e.target.value.trim();
+        const btn = document.getElementById('submitBtn');
+
+        // บล็อกชื่อซ้ำเด็ดขาด!
+        if (reportedNames.includes(selectedName)) {
+            Swal.fire({ icon: 'error', title: 'ไม่อนุญาตให้บันทึก!', text: 'รายชื่อนี้รายงานผลเรียบร้อยแล้ว ไม่สามารถส่งซ้ำได้' });
+            btn.disabled = true;
+            btn.innerText = "รายชื่อนี้รายงานไปแล้ว";
+            btn.style.backgroundColor = "#dc3545";
+            return;
         } else {
-            positionInput.value = "";
-            agencyInput.value = "";
+            btn.disabled = false;
+            btn.innerText = "ส่งรายงานผล";
+            btn.style.backgroundColor = "#27ae60";
         }
+
+        // ดึงตำแหน่ง
+        const foundEmp = employeeData.find(emp => emp.name === selectedName);
+        if (foundEmp) document.getElementById('position').value = foundEmp.position || "";
     });
 
     document.getElementById('reportForm').addEventListener('submit', function(e) {
@@ -129,74 +140,42 @@
         const btn = document.getElementById('submitBtn');
         btn.disabled = true;
 
-        Swal.fire({
-            title: 'กำลังบันทึกข้อมูล...',
-            text: 'กรุณารอสักครู่ ระบบกำลังบีบอัดภาพและส่งข้อมูล',
-            allowOutsideClick: false,
-            didOpen: () => { Swal.showLoading(); }
-        });
+        Swal.fire({ title: 'กำลังบันทึกข้อมูล...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
 
         const fileInput = document.getElementById('uploadFile');
         const file = fileInput.files[0];
+        const reader = new FileReader();
+        reader.readAsDataURL(file); 
+        
+        reader.onload = function(event) {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                let width = img.width, height = img.height;
+                if (width > 600) { height = Math.round((height * 600) / width); width = 600; }
+                canvas.width = width; canvas.height = height;
+                canvas.getContext('2d').drawImage(img, 0, 0, width, height);
 
-        if (file) {
-            const reader = new FileReader();
-            reader.readAsDataURL(file); 
-            
-            reader.onload = function(event) {
-                const img = new Image();
-                img.src = event.target.result;
-                
-                img.onload = function() {
-                    const canvas = document.createElement('canvas');
-                    // ลดขนาดภาพให้เล็กและประมวลผลเร็วขึ้น
-                    const MAX_WIDTH = 600; 
-                    let width = img.width;
-                    let height = img.height;
-                    if (width > MAX_WIDTH) { height = Math.round((height * MAX_WIDTH) / width); width = MAX_WIDTH; }
-                    canvas.width = width; canvas.height = height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, width, height);
+                const base64Data = canvas.toDataURL('image/jpeg', 0.6).split(',')[1];
+                const selectedName = document.getElementById('name').value.trim();
 
-                    // บีบอัดคุณภาพเหลือ 60% (อัปโหลดไวขึ้นมาก)
-                    const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.6);
-                    const base64Data = compressedDataUrl.split(',')[1];
-                    const selectedName = document.getElementById('name').value;
-
-                    const payload = {
-                        name: selectedName,
-                        position: document.getElementById('position').value,
-                        agency: document.getElementById('agency').value,
-                        amphoe: "-", 
-                        report: "ดำเนินการลงทะเบียนเข้าใช้งานแล้ว", 
-                        fileData: base64Data,
-                        mimeType: 'image/jpeg'
-                    };
-
-                    fetch(scriptURL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) })
-                    .then(() => {
-                        if(!reportedNames.includes(selectedName)) {
-                            reportedNames.push(selectedName);
-                            localStorage.setItem('eduPass_rep', JSON.stringify(reportedNames));
-                        }
-                        
-                        Swal.fire({
-                            icon: 'success', title: 'บันทึกสำเร็จ!', text: 'ระบบได้รับรายงานผลของคุณเรียบร้อยแล้ว',
-                            confirmButtonText: 'ตกลง', confirmButtonColor: '#28a745'
-                        });
-                        document.getElementById('reportForm').reset();
-                        btn.disabled = false;
-                    })
-                    .catch(error => {
-                        Swal.fire({
-                            icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'ส่งข้อมูลไม่สำเร็จ กรุณาลองใหม่',
-                            confirmButtonText: 'ตกลง', confirmButtonColor: '#dc3545'
-                        });
-                        btn.disabled = false;
-                    });
+                const payload = {
+                    name: selectedName, position: document.getElementById('position').value,
+                    agency: document.getElementById('agency').value, amphoe: "-", 
+                    report: "ดำเนินการลงทะเบียนเข้าใช้งานแล้ว", fileData: base64Data, mimeType: 'image/jpeg'
                 };
+
+                fetch(scriptURL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) })
+                .then(() => {
+                    reportedNames.push(selectedName); // เก็บลงความจำชั่วคราวเพื่อบล็อกทันที
+                    Swal.fire('บันทึกสำเร็จ!', 'ได้รับรายงานผลเรียบร้อยแล้ว', 'success');
+                    document.getElementById('reportForm').reset();
+                    document.getElementById('name').disabled = true;
+                })
+                .catch(error => Swal.fire('ผิดพลาด', 'ส่งข้อมูลไม่สำเร็จ กรุณาลองใหม่', 'error'));
             };
-        }
+        };
     });
 </script>
 </body>

@@ -6,6 +6,7 @@
     <title>ระบบรายงานผล - สำหรับผู้บริหาร</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         body { font-family: 'Sarabun', sans-serif; background-color: #f4f7f6; padding: 20px; }
         .container { max-width: 1200px; margin: 0 auto; }
@@ -17,32 +18,29 @@
         tr:nth-child(even) { background-color: #f9f9f9; }
         .complete { color: #28a745; font-weight: bold; }
         .incomplete { color: #dc3545; font-weight: bold; }
-        .btn-view { padding: 5px 10px; background-color: #17a2b8; color: white; text-decoration: none; border-radius: 3px; font-size: 12px; }
+        .btn-view { padding: 5px 8px; background-color: #17a2b8; color: white; text-decoration: none; border-radius: 3px; font-size: 12px; cursor: pointer; border: none;}
+        .btn-edit { background-color: #ffc107; color: black; border: none; padding: 5px 8px; border-radius: 3px; cursor: pointer; font-size: 12px; }
+        .btn-del { background-color: #dc3545; color: white; border: none; padding: 5px 8px; border-radius: 3px; cursor: pointer; font-size: 12px; }
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         .chart-container { position: relative; height: 350px; width: 100%; display: flex; justify-content: center; }
         .login-box { max-width: 400px; margin: 80px auto; text-align: center; }
         .login-box input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 16px; text-align: center;}
         .login-box button { width: 100%; padding: 12px; background-color: #007bff; color: white; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; font-weight: bold; }
-        .login-box button:hover { background-color: #0056b3; }
-        .error-msg { color: red; font-size: 14px; display: none; margin-top: 10px; }
-        .loading-badge { display: none; text-align: center; color: #ff9800; font-size: 14px; font-weight: bold; margin-bottom: 10px; }
         @media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
 
 <div id="loginSection" class="card login-box">
-    <h3>🔒 เข้าสู่ระบบรายงานผล Edu Pass</h3>
-    <p style="color: #666; font-size:14px;">กรุณากรอกรหัสผ่านเพื่อดูข้อมูล</p>
+    <h3>🔒 เข้าสู่ระบบผู้บริหาร</h3>
     <input type="password" id="passwordInput" placeholder="ระบุรหัสผ่าน">
     <button onclick="checkLogin()">เข้าสู่ระบบ</button>
-    <div id="loginError" class="error-msg">รหัสผ่านไม่ถูกต้อง!</div>
 </div>
 
 <div id="dashboardSection" class="container" style="display: none;">
-    <h2 id="dashTitle">📊 Dashboard สรุปผลการลงทะเบียน Edu Pass</h2>
-    <div id="syncStatus" class="loading-badge">🔄 กำลังดึงข้อมูลล่าสุดจากเซิร์ฟเวอร์...</div>
+    <h2 id="dashTitle">📊 Dashboard สรุปผล Edu Pass</h2>
     
+    <!-- แสดงกราฟ -->
     <div class="grid-2">
         <div class="card">
             <h3 id="pieTitle">สัดส่วนความคืบหน้าภาพรวม</h3>
@@ -57,56 +55,49 @@
             </div>
         </div>
     </div>
-
-    <!-- ตารางสรุปเป้าหมาย -->
+    
     <div class="card" style="overflow-x:auto;">
         <h3>ความคืบหน้าเทียบเป้าหมาย</h3>
         <table>
             <thead>
                 <tr>
                     <th>หน่วยงาน/สถานศึกษา</th>
-                    <th>เป้าหมาย (คน)</th>
-                    <th>รายงานแล้ว (คน)</th>
+                    <th>เป้าหมาย</th>
+                    <th>รายงานแล้ว (ในเป้าหมาย)</th>
+                    <th>เพิ่มเติมนอกเป้าหมาย</th>
                     <th>ร้อยละ (%)</th>
                     <th>สถานะ</th>
                 </tr>
             </thead>
-            <tbody id="targetTable">
-                <tr><td colspan="5" style="text-align:center;">กำลังประมวลผล...</td></tr>
-            </tbody>
+            <tbody id="targetTable"></tbody>
         </table>
     </div>
 
     <div class="grid-2">
         <div class="card" style="overflow-x:auto;">
-            <h3>รายละเอียดผู้ที่รายงานแล้ว</h3>
+            <h3>รายละเอียดผู้ที่รายงานแล้ว (จัดการข้อมูล)</h3>
             <table>
                 <thead>
                     <tr>
-                        <th>หน่วยงาน/สถานศึกษา</th>
-                        <th>ชื่อ-นามสกุล</th>
-                        <th>หลักฐาน</th>
+                        <th>หน่วยงาน</th>
+                        <th>ชื่อ</th>
+                        <th style="width: 150px; text-align:center;">จัดการ</th>
                     </tr>
                 </thead>
-                <tbody id="dataTable">
-                    <tr><td colspan="3" style="text-align:center;">กำลังประมวลผล...</td></tr>
-                </tbody>
+                <tbody id="dataTable"></tbody>
             </table>
         </div>
 
         <div class="card" style="overflow-x:auto;">
-            <h3 style="color:#dc3545;">❌ รายชื่อผู้ที่ยังไม่ได้รายงานผล</h3>
+            <h3 style="color:#dc3545;">❌ ผู้ที่ยังไม่ได้รายงาน</h3>
             <table>
                 <thead>
                     <tr>
-                        <th style="background-color:#dc3545;">หน่วยงาน/สถานศึกษา</th>
-                        <th style="background-color:#dc3545;">ชื่อ-นามสกุล</th>
-                        <th style="background-color:#dc3545;">ตำแหน่ง</th>
+                        <th style="background-color:#dc3545;">หน่วยงาน</th>
+                        <th style="background-color:#dc3545;">ชื่อ</th>
                     </tr>
                 </thead>
-                <tbody id="missingTable">
-                    <tr><td colspan="3" style="text-align:center;">กำลังประมวลผล...</td></tr>
-                </tbody>
+                <tbody id="missingTable"></tbody>
             </table>
         </div>
     </div>
@@ -115,112 +106,111 @@
 <script>
     Chart.register(ChartDataLabels);
 
+    // *** นำ Web App URL ของคุณมาใส่ที่นี่ ***
     const scriptURL = 'https://script.google.com/macros/s/AKfycbyiTzoycC5tsWoa1JG2Ng0JzHUX0yF0ATphyfbF3pmjQ9eVrWUILnybKMgwxOYHPYPS/exec'; 
+    let globalRole = '';
     
     let currentChartStatus = null;
     let currentChartTarget = null;
 
     const accessRoles = {
-        'admin1234': 'all',
-        'muang01': 'เมืองลำพูน',
-        'maetha02': 'แม่ทา',
-        'banhong03': 'บ้านโฮ่ง',
-        'lee04': 'ลี้',
-        'thunghua05': 'ทุ่งหัวช้าง',
-        'pasang06': 'ป่าซาง',
-        'banthi07': 'บ้านธิ',
-        'wiang08': 'เวียงหนองล่อง'
+        'admin1234': 'all', 'muang01': 'เมืองลำพูน', 'maetha02': 'แม่ทา', 
+        'banhong03': 'บ้านโฮ่ง', 'lee04': 'ลี้', 'thunghua05': 'ทุ่งหัวช้าง', 
+        'pasang06': 'ป่าซาง', 'banthi07': 'บ้านธิ', 'wiang08': 'เวียงหนองล่อง'
     };
 
     function checkLogin() {
         const pwd = document.getElementById('passwordInput').value.trim();
-        const role = accessRoles[pwd];
-
-        if (role) {
+        globalRole = accessRoles[pwd];
+        if (globalRole) {
             document.getElementById('loginSection').style.display = 'none';
             document.getElementById('dashboardSection').style.display = 'block';
-            document.getElementById('loginError').style.display = 'none';
-            
-            if (role === 'all') {
-                document.getElementById('dashTitle').innerHTML = '📊 Dashboard สรุปผล Edu Pass<br><small>ภาพรวมระดับจังหวัด</small>';
-            } else {
-                document.getElementById('dashTitle').innerHTML = `📊 Dashboard สรุปผล Edu Pass<br><small>อำเภอ${role}</small>`;
-            }
-            fetchData(role);
+            document.getElementById('dashTitle').innerHTML = globalRole === 'all' ? '📊 ภาพรวมระดับจังหวัด' : `📊 อำเภอ${globalRole}`;
+            fetchData();
         } else {
-            document.getElementById('loginError').style.display = 'block';
+            Swal.fire('ผิดพลาด', 'รหัสผ่านไม่ถูกต้อง', 'error');
         }
     }
 
-    document.getElementById("passwordInput").addEventListener("keypress", function(event) {
-        if (event.key === "Enter") { event.preventDefault(); checkLogin(); }
-    });
+    function fetchData() {
+        Swal.fire({ title: 'กำลังโหลดข้อมูล...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+        fetch(scriptURL + "?action=getReport")
+            .then(res => res.json())
+            .then(data => { renderDashboard(data); Swal.close(); })
+            .catch(err => Swal.fire('ผิดพลาด', 'โหลดข้อมูลล้มเหลว', 'error'));
+    }
 
-    function renderDashboard(data, userRole) {
+    function renderDashboard(data) {
         let reports = data.reports;
         let targets = data.targets;
         let employees = data.employees;
 
-        if (userRole !== 'all') {
-            reports = reports.filter(r => r.agency && r.agency.includes(userRole));
-            targets = targets.filter(t => t.amphoe && t.amphoe.includes(userRole));
-            employees = employees.filter(e => e.agency && e.agency.includes(userRole));
+        if (globalRole !== 'all') {
+            reports = reports.filter(r => r.agency && r.agency.includes(globalRole));
+            targets = targets.filter(t => t.amphoe && t.amphoe.includes(globalRole));
+            employees = employees.filter(e => e.agency && e.agency.includes(globalRole));
         }
 
         let targetData = {};
-        let totalTargetAll = 0;
-        let totalActualAll = 0;
         let reportedNamesSet = new Set(); 
+        let totalTargetAll = 0;
+        let totalActualTargetAll = 0;
+        
+        const targetEmployeeNames = employees.map(e => e.name.trim()); 
 
         targets.forEach(t => { 
-            let ampName = t.amphoe.trim(); 
-            targetData[ampName] = { target: t.target, actual: 0 }; 
-            totalTargetAll += t.target; 
+            targetData[t.amphoe.trim()] = { target: t.target, actualTarget: 0, extra: 0 }; 
+            totalTargetAll += t.target;
         });
         
         reports.forEach(r => {
-            let agencyName = r.agency ? r.agency.trim() : "-";
-            // Check if status exists, or if it's missing (assume reported if in reports sheet)
-            if (targetData[agencyName] !== undefined && (r.status === "ดำเนินการลงทะเบียนเข้าใช้งานแล้ว" || !r.status)) {
-                targetData[agencyName].actual++;
-                totalActualAll++;
+            let agency = r.agency ? r.agency.trim() : "-";
+            let name = r.name ? r.name.trim() : "-";
+            
+            if (targetData[agency] !== undefined) {
+                if (targetEmployeeNames.includes(name)) {
+                    targetData[agency].actualTarget++;
+                    totalActualTargetAll++;
+                } else {
+                    targetData[agency].extra++; 
+                }
             }
-            reportedNamesSet.add(r.name.trim());
+            reportedNamesSet.add(name);
         });
 
-        let totalNotReported = totalTargetAll - totalActualAll;
-        if(totalNotReported < 0) totalNotReported = 0;
-
-        // --- ตารางเป้าหมาย ---
+        // 1. ตารางเป้าหมาย และรวบรวมข้อมูลทำกราฟแท่ง
         const targetTable = document.getElementById('targetTable');
         targetTable.innerHTML = '';
         let chartLabels = []; let chartTargets = []; let chartActuals = [];
-
-        if (Object.keys(targetData).length === 0) {
-            targetTable.innerHTML = '<tr><td colspan="5" style="text-align:center;">ไม่พบข้อมูลเป้าหมาย</td></tr>';
-        } else {
-            for (let amp in targetData) {
-                let d = targetData[amp];
-                let isComplete = d.actual >= d.target;
-                let pct = d.target > 0 ? ((d.actual / d.target) * 100).toFixed(1) : 0;
-                if(pct > 100) pct = 100;
-                let stClass = isComplete ? 'complete' : 'incomplete';
-                let stText = isComplete ? 'ครบถ้วน' : `ขาดอีก ${d.target - d.actual}`;
-                
-                targetTable.innerHTML += `<tr>
-                    <td>${amp}</td><td style="text-align:center;">${d.target}</td>
-                    <td style="text-align:center; font-weight:bold;">${d.actual}</td>
-                    <td style="text-align:center;">${pct}%</td><td class="${stClass}">${stText}</td>
-                </tr>`;
-                chartLabels.push(amp); chartTargets.push(d.target); chartActuals.push(d.actual);
-            }
+        
+        for (let amp in targetData) {
+            let d = targetData[amp];
+            let pct = d.target > 0 ? ((d.actualTarget / d.target) * 100).toFixed(1) : 0;
+            if(pct > 100) pct = 100;
+            let isComplete = d.actualTarget >= d.target;
+            
+            targetTable.innerHTML += `<tr>
+                <td>${amp}</td>
+                <td style="text-align:center;">${d.target}</td>
+                <td style="text-align:center; color:#28a745; font-weight:bold;">${d.actualTarget}</td>
+                <td style="text-align:center; color:#17a2b8; font-weight:bold;">+${d.extra}</td>
+                <td style="text-align:center;">${pct}%</td>
+                <td class="${isComplete ? 'complete' : 'incomplete'}">${isComplete ? 'ครบถ้วน' : `ขาด ${d.target - d.actualTarget}`}</td>
+            </tr>`;
+            
+            chartLabels.push(amp);
+            chartTargets.push(d.target);
+            chartActuals.push(d.actualTarget);
         }
 
         // --- กราฟวงกลม ---
+        let totalNotReported = totalTargetAll - totalActualTargetAll;
+        if(totalNotReported < 0) totalNotReported = 0;
+        
         if(currentChartStatus) currentChartStatus.destroy();
         currentChartStatus = new Chart(document.getElementById('statusChart').getContext('2d'), {
             type: 'pie',
-            data: { labels: ['รายงานแล้ว', 'ยังไม่ได้รายงาน'], datasets: [{ data: [totalActualAll, totalNotReported], backgroundColor: ['#28a745', '#dc3545'] }] },
+            data: { labels: ['รายงานแล้ว (ตรงเป้าหมาย)', 'ยังไม่ได้รายงาน'], datasets: [{ data: [totalActualTargetAll, totalNotReported], backgroundColor: ['#28a745', '#dc3545'] }] },
             options: { maintainAspectRatio: false, plugins: { datalabels: { color: '#fff', font: { weight: 'bold', size: 14 }, textAlign: 'center',
                 formatter: function(value) { let t = totalTargetAll; if(t===0) return '0%'; return value + ' คน\n(' + Math.round((value/t)*100) + '%)'; } } } }
         });
@@ -235,57 +225,88 @@
                     formatter: function(v, ctx) { if(ctx.datasetIndex===1){ let t=ctx.chart.data.datasets[0].data[ctx.dataIndex]; if(t>0) return v+' ('+((v/t)*100).toFixed(0)+'%)'; } return v; } } } }
         });
 
-        // --- ตารางผู้ที่รายงานแล้ว ---
+        // 2. ตารางผู้รายงาน (มีปุ่มแก้ไขเฉพาะรูป/ลบ)
         const dataTable = document.getElementById('dataTable');
         dataTable.innerHTML = '';
-        if(reports.length === 0) {
-            dataTable.innerHTML = '<tr><td colspan="3" style="text-align:center;">ยังไม่มีผู้รายงาน</td></tr>';
-        } else {
-            reports.forEach(row => {
-                dataTable.innerHTML += `<tr>
-                    <td>${row.agency}</td><td>${row.name}</td>
-                    <td style="text-align:center;"><a href="${row.imageUrl}" target="_blank" class="btn-view">ดูรูป</a></td>
-                </tr>`;
-            });
-        }
+        reports.forEach(row => {
+            let extraTag = targetEmployeeNames.includes(row.name.trim()) ? '' : ' <span style="color:orange;font-size:10px;">(นอกกลุ่ม)</span>';
+            
+            dataTable.innerHTML += `<tr>
+                <td>${row.agency}</td>
+                <td>${row.name}${extraTag}</td>
+                <td style="text-align:center;">
+                    <a href="${row.imageUrl}" target="_blank" class="btn-view">🖼️ ดูรูป</a>
+                    <button class="btn-edit" onclick="editImage(${row.row}, '${row.name}')">📸 เปลี่ยนรูป</button>
+                    <button class="btn-del" onclick="deleteRecord(${row.row})">🗑️ ลบ</button>
+                </td>
+            </tr>`;
+        });
 
-        // --- ตารางผู้ที่ยังไม่ได้รายงาน ---
+        // 3. ตารางคนที่ขาด
         const missingTable = document.getElementById('missingTable');
         missingTable.innerHTML = '';
-        let missingEmployees = employees.filter(emp => !reportedNamesSet.has(emp.name.trim()));
-        
-        if(missingEmployees.length === 0) {
-            missingTable.innerHTML = '<tr><td colspan="3" style="text-align:center; color:green; font-weight:bold;">รายงานครบทุกคนแล้ว 🎉</td></tr>';
-        } else {
-            missingEmployees.forEach(emp => {
-                missingTable.innerHTML += `<tr>
-                    <td>${emp.agency}</td><td>${emp.name}</td><td>${emp.position}</td>
-                </tr>`;
-            });
-        }
+        let missing = employees.filter(emp => !reportedNamesSet.has(emp.name.trim()));
+        missing.forEach(emp => {
+            missingTable.innerHTML += `<tr><td>${emp.agency}</td><td>${emp.name}</td></tr>`;
+        });
     }
 
-    function fetchData(role) {
-        // 1. โชว์ข้อมูลจากความจำมือถือก่อน (ไวมาก)
-        const cachedData = localStorage.getItem('eduPass_dashData');
-        if (cachedData) {
-            renderDashboard(JSON.parse(cachedData), role);
-            document.getElementById('syncStatus').style.display = 'block'; // โชว์ว่ากำลังอัปเดตของใหม่
-        }
+    // ฟังก์ชันลบ
+    function deleteRecord(rowNum) {
+        Swal.fire({
+            title: 'ยืนยันการลบ?', icon: 'warning', showCancelButton: true, confirmButtonText: 'ลบเลย!', cancelButtonText: 'ยกเลิก'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Swal.fire({ title: 'กำลังลบ...', didOpen: () => { Swal.showLoading(); }});
+                fetch(scriptURL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({action: 'delete', row: rowNum}) })
+                .then(() => { Swal.fire('สำเร็จ', 'ลบข้อมูลแล้ว', 'success'); fetchData(); });
+            }
+        });
+    }
 
-        // 2. ดึงข้อมูลใหม่จาก Google Sheets
-        fetch(scriptURL + "?action=getReport")
-            .then(response => response.json())
-            .then(data => {
-                localStorage.setItem('eduPass_dashData', JSON.stringify(data)); // บันทึกข้อมูลใหม่
-                renderDashboard(data, role); // สร้างตาราง/กราฟใหม่
-                document.getElementById('syncStatus').style.display = 'none'; // ซ่อนข้อความกำลังโหลด
-            })
-            .catch(error => {
-                console.error(error);
-                document.getElementById('syncStatus').innerText = '⚠️ การดึงข้อมูลล่าสุดล้มเหลว (แสดงผลข้อมูลเก่า)';
-                document.getElementById('syncStatus').style.color = 'red';
-            });
+    // ฟังก์ชันแก้ไข (ให้อัปโหลดรูปใหม่เท่านั้น)
+    function editImage(rowNum, oldName) {
+        Swal.fire({
+            title: 'เปลี่ยนรูปภาพใหม่',
+            text: 'สำหรับ: ' + oldName,
+            html: '<input type="file" id="swal-file" accept="image/*" style="margin-top:15px;">',
+            showCancelButton: true, confirmButtonText: 'บันทึกรูปใหม่', cancelButtonText: 'ยกเลิก',
+            preConfirm: () => {
+                const file = document.getElementById('swal-file').files[0];
+                if (!file) { Swal.showValidationMessage('กรุณาเลือกรูปภาพ'); }
+                return file;
+            }
+        }).then((result) => {
+            if (result.isConfirmed && result.value) {
+                Swal.fire({ title: 'กำลังอัปโหลด...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+                
+                const file = result.value;
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = function(event) {
+                    const img = new Image();
+                    img.src = event.target.result;
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        let width = img.width, height = img.height;
+                        if (width > 600) { height = Math.round((height * 600) / width); width = 600; }
+                        canvas.width = width; canvas.height = height;
+                        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+
+                        const base64Data = canvas.toDataURL('image/jpeg', 0.6).split(',')[1];
+                        
+                        const payload = { action: 'editImage', row: rowNum, fileData: base64Data, mimeType: 'image/jpeg' };
+
+                        fetch(scriptURL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) })
+                        .then(() => { 
+                            Swal.fire('สำเร็จ', 'อัปเดตรูปภาพใหม่เรียบร้อยแล้ว', 'success'); 
+                            fetchData(); // รีเฟรชตารางใหม่
+                        })
+                        .catch(error => Swal.fire('ผิดพลาด', 'อัปเดตไม่สำเร็จ', 'error'));
+                    };
+                };
+            }
+        });
     }
 </script>
 </body>
