@@ -25,6 +25,8 @@
         .login-box { max-width: 400px; margin: 80px auto; text-align: center; }
         .login-box input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 16px; text-align: center;}
         .login-box button { width: 100%; padding: 12px; background-color: #007bff; color: white; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; font-weight: bold; }
+        .error-msg { color: red; font-size: 14px; display: none; margin-top: 10px; }
+        .loading-badge { display: none; text-align: center; color: #ff9800; font-size: 14px; font-weight: bold; margin-bottom: 10px; }
         @media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }
     </style>
 </head>
@@ -34,7 +36,6 @@
     <h3>🔒 เข้าสู่ระบบผู้บริหาร</h3>
     <input type="password" id="passwordInput" placeholder="ระบุรหัสผ่าน">
     
-    <!-- เพิ่มกล่องติ๊กแสดงรหัสผ่าน -->
     <div style="text-align: left; margin-top: -5px; margin-bottom: 15px;">
         <input type="checkbox" id="showPwd" onclick="togglePassword()" style="width: auto; margin-right: 5px; cursor: pointer;">
         <label for="showPwd" style="display: inline; font-size: 14px; font-weight: normal; cursor: pointer; color: #555;">แสดงรหัสผ่าน</label>
@@ -43,7 +44,26 @@
     <button onclick="checkLogin()">เข้าสู่ระบบ</button>
     <div id="loginError" class="error-msg">รหัสผ่านไม่ถูกต้อง!</div>
 </div>
+
+<div id="dashboardSection" class="container" style="display: none;">
+    <h2 id="dashTitle">📊 Dashboard สรุปผลการลงทะเบียน Edu Pass</h2>
+    <div id="syncStatus" class="loading-badge">🔄 กำลังดึงข้อมูลล่าสุดจากเซิร์ฟเวอร์...</div>
     
+    <div class="grid-2">
+        <div class="card">
+            <h3 id="pieTitle">สัดส่วนความคืบหน้าภาพรวม</h3>
+            <div class="chart-container">
+                <canvas id="statusChart"></canvas>
+            </div>
+        </div>
+        <div class="card">
+            <h3 id="barTitle">เปรียบเทียบเป้าหมายและผลการรายงาน</h3>
+            <div class="chart-container">
+                <canvas id="targetChart"></canvas>
+            </div>
+        </div>
+    </div>
+
     <div class="card" style="overflow-x:auto;">
         <h3>ความคืบหน้าเทียบเป้าหมาย</h3>
         <table>
@@ -57,7 +77,9 @@
                     <th>สถานะ</th>
                 </tr>
             </thead>
-            <tbody id="targetTable"></tbody>
+            <tbody id="targetTable">
+                <tr><td colspan="6" style="text-align:center;">กำลังประมวลผล...</td></tr>
+            </tbody>
         </table>
     </div>
 
@@ -72,7 +94,9 @@
                         <th style="width: 150px; text-align:center;">จัดการ</th>
                     </tr>
                 </thead>
-                <tbody id="dataTable"></tbody>
+                <tbody id="dataTable">
+                    <tr><td colspan="3" style="text-align:center;">กำลังประมวลผล...</td></tr>
+                </tbody>
             </table>
         </div>
 
@@ -85,7 +109,9 @@
                         <th style="background-color:#dc3545;">ชื่อ</th>
                     </tr>
                 </thead>
-                <tbody id="missingTable"></tbody>
+                <tbody id="missingTable">
+                    <tr><td colspan="2" style="text-align:center;">กำลังประมวลผล...</td></tr>
+                </tbody>
             </table>
         </div>
     </div>
@@ -94,7 +120,6 @@
 <script>
     Chart.register(ChartDataLabels);
 
-    // *** นำ Web App URL ของคุณมาใส่ที่นี่ (ลิงก์เดิมได้เลย) ***
     const scriptURL = 'https://script.google.com/macros/s/AKfycbx9_Mgzm-NQKb50QT2eobc5877xfD7ViT4KCvAMk-etkPnWPYfsDjmuSYE9nN5odn7y/exec'; 
     let globalRole = '';
     
@@ -107,7 +132,6 @@
         'pasang06': 'ป่าซาง', 'banthi07': 'บ้านธิ', 'wiang08': 'เวียงหนองล่อง'
     };
 
-    // ฟังก์ชันสลับการแสดงรหัสผ่าน
     function togglePassword() {
         const pwdInput = document.getElementById('passwordInput');
         if (pwdInput.type === "password") {
@@ -117,35 +141,64 @@
         }
     }
 
+    function checkLogin() {
+        const pwd = document.getElementById('passwordInput').value.trim();
+        const role = accessRoles[pwd];
+
+        if (role) {
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('dashboardSection').style.display = 'block';
+            document.getElementById('loginError').style.display = 'none';
+            
+            if (role === 'all') {
+                document.getElementById('dashTitle').innerHTML = '📊 Dashboard สรุปผล Edu Pass<br><small>ภาพรวมระดับจังหวัด</small>';
+            } else {
+                document.getElementById('dashTitle').innerHTML = `📊 Dashboard สรุปผล Edu Pass<br><small>อำเภอ${role}</small>`;
+            }
+            fetchData(role);
+        } else {
+            document.getElementById('loginError').style.display = 'block';
+        }
+    }
+
     document.getElementById("passwordInput").addEventListener("keypress", function(event) {
         if (event.key === "Enter") { event.preventDefault(); checkLogin(); }
     });
 
-    function fetchData() {
+    function fetchData(role) {
         Swal.fire({ title: 'กำลังโหลดข้อมูล...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
 
         const cachedData = localStorage.getItem('eduPass_dashData');
-        if (cachedData) renderDashboard(JSON.parse(cachedData));
+        if (cachedData) {
+            renderDashboard(JSON.parse(cachedData), role);
+            document.getElementById('syncStatus').style.display = 'block';
+        }
 
         fetch(scriptURL + "?action=getReport")
             .then(res => res.json())
             .then(data => { 
                 localStorage.setItem('eduPass_dashData', JSON.stringify(data));
-                renderDashboard(data); 
+                renderDashboard(data, role); 
+                document.getElementById('syncStatus').style.display = 'none';
                 Swal.close(); 
             })
-            .catch(err => { Swal.close(); console.error(err); });
+            .catch(err => { 
+                Swal.close(); 
+                console.error(err);
+                document.getElementById('syncStatus').innerText = '⚠️ การดึงข้อมูลล่าสุดล้มเหลว (แสดงผลข้อมูลเก่า)';
+                document.getElementById('syncStatus').style.color = 'red';
+            });
     }
 
-    function renderDashboard(data) {
+    function renderDashboard(data, userRole) {
         let reports = data.reports;
         let targets = data.targets;
         let employees = data.employees;
 
-        if (globalRole !== 'all') {
-            reports = reports.filter(r => r.agency && r.agency.includes(globalRole));
-            targets = targets.filter(t => t.amphoe && t.amphoe.includes(globalRole));
-            employees = employees.filter(e => e.agency && e.agency.includes(globalRole));
+        if (userRole !== 'all') {
+            reports = reports.filter(r => r.agency && r.agency.includes(userRole));
+            targets = targets.filter(t => t.amphoe && t.amphoe.includes(userRole));
+            employees = employees.filter(e => e.agency && e.agency.includes(userRole));
         }
 
         let targetData = {};
@@ -185,6 +238,7 @@
             if(pct > 100) pct = 100;
             let isComplete = d.actualTarget >= d.target;
             
+            // แก้ไข Syntax Error บริเวณนี้เรียบร้อยแล้ว
             targetTable.innerHTML += `<tr>
                 <td>${amp}</td>
                 <td style="text-align:center;">${d.target}</td>
@@ -249,9 +303,9 @@
                 
                 fetch(scriptURL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({action: 'delete', row: rowNum}) })
                 .then(() => { 
-                    localStorage.removeItem('eduPass_dashData'); // เคลียร์แคชทันทีที่กดลบ
+                    localStorage.removeItem('eduPass_dashData'); // เคลียร์แคช
                     Swal.fire('สำเร็จ', 'ลบข้อมูลแล้ว', 'success'); 
-                    fetchData(); 
+                    fetchData(globalRole); // โหลดข้อมูลใหม่
                 })
                 .catch(error => Swal.fire('ผิดพลาด', 'ลบข้อมูลไม่สำเร็จ', 'error'));
             }
