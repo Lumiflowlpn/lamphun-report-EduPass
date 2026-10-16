@@ -18,9 +18,8 @@
         tr:nth-child(even) { background-color: #f9f9f9; }
         .complete { color: #28a745; font-weight: bold; }
         .incomplete { color: #dc3545; font-weight: bold; }
-        .btn-view { padding: 5px 8px; background-color: #17a2b8; color: white; text-decoration: none; border-radius: 3px; font-size: 12px; cursor: pointer; border: none;}
-        .btn-edit { background-color: #ffc107; color: black; border: none; padding: 5px 8px; border-radius: 3px; cursor: pointer; font-size: 12px; }
-        .btn-del { background-color: #dc3545; color: white; border: none; padding: 5px 8px; border-radius: 3px; cursor: pointer; font-size: 12px; }
+        .btn-view { padding: 5px 12px; background-color: #17a2b8; color: white; text-decoration: none; border-radius: 3px; font-size: 13px; cursor: pointer; border: none;}
+        .btn-del { background-color: #dc3545; color: white; border: none; padding: 5px 12px; border-radius: 3px; cursor: pointer; font-size: 13px; }
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         .chart-container { position: relative; height: 350px; width: 100%; display: flex; justify-content: center; }
         .login-box { max-width: 400px; margin: 80px auto; text-align: center; }
@@ -40,7 +39,6 @@
 <div id="dashboardSection" class="container" style="display: none;">
     <h2 id="dashTitle">📊 Dashboard สรุปผล Edu Pass</h2>
     
-    <!-- แสดงกราฟ -->
     <div class="grid-2">
         <div class="card">
             <h3 id="pieTitle">สัดส่วนความคืบหน้าภาพรวม</h3>
@@ -75,7 +73,7 @@
 
     <div class="grid-2">
         <div class="card" style="overflow-x:auto;">
-            <h3>รายละเอียดผู้ที่รายงานแล้ว (จัดการข้อมูล)</h3>
+            <h3>รายละเอียดผู้ที่รายงานแล้ว</h3>
             <table>
                 <thead>
                     <tr>
@@ -106,7 +104,7 @@
 <script>
     Chart.register(ChartDataLabels);
 
-    // *** นำ Web App URL ของคุณมาใส่ที่นี่ ***
+    // *** นำ Web App URL ของคุณมาใส่ที่นี่ (ลิงก์เดิมได้เลย) ***
     const scriptURL = 'https://script.google.com/macros/s/AKfycbyiTzoycC5tsWoa1JG2Ng0JzHUX0yF0ATphyfbF3pmjQ9eVrWUILnybKMgwxOYHPYPS/exec'; 
     let globalRole = '';
     
@@ -132,12 +130,24 @@
         }
     }
 
+    document.getElementById("passwordInput").addEventListener("keypress", function(event) {
+        if (event.key === "Enter") { event.preventDefault(); checkLogin(); }
+    });
+
     function fetchData() {
         Swal.fire({ title: 'กำลังโหลดข้อมูล...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+
+        const cachedData = localStorage.getItem('eduPass_dashData');
+        if (cachedData) renderDashboard(JSON.parse(cachedData));
+
         fetch(scriptURL + "?action=getReport")
             .then(res => res.json())
-            .then(data => { renderDashboard(data); Swal.close(); })
-            .catch(err => Swal.fire('ผิดพลาด', 'โหลดข้อมูลล้มเหลว', 'error'));
+            .then(data => { 
+                localStorage.setItem('eduPass_dashData', JSON.stringify(data));
+                renderDashboard(data); 
+                Swal.close(); 
+            })
+            .catch(err => { Swal.close(); console.error(err); });
     }
 
     function renderDashboard(data) {
@@ -178,7 +188,6 @@
             reportedNamesSet.add(name);
         });
 
-        // 1. ตารางเป้าหมาย และรวบรวมข้อมูลทำกราฟแท่ง
         const targetTable = document.getElementById('targetTable');
         targetTable.innerHTML = '';
         let chartLabels = []; let chartTargets = []; let chartActuals = [];
@@ -198,24 +207,20 @@
                 <td class="${isComplete ? 'complete' : 'incomplete'}">${isComplete ? 'ครบถ้วน' : `ขาด ${d.target - d.actualTarget}`}</td>
             </tr>`;
             
-            chartLabels.push(amp);
-            chartTargets.push(d.target);
-            chartActuals.push(d.actualTarget);
+            chartLabels.push(amp); chartTargets.push(d.target); chartActuals.push(d.actualTarget);
         }
 
-        // --- กราฟวงกลม ---
         let totalNotReported = totalTargetAll - totalActualTargetAll;
         if(totalNotReported < 0) totalNotReported = 0;
         
         if(currentChartStatus) currentChartStatus.destroy();
         currentChartStatus = new Chart(document.getElementById('statusChart').getContext('2d'), {
             type: 'pie',
-            data: { labels: ['รายงานแล้ว (ตรงเป้าหมาย)', 'ยังไม่ได้รายงาน'], datasets: [{ data: [totalActualTargetAll, totalNotReported], backgroundColor: ['#28a745', '#dc3545'] }] },
+            data: { labels: ['รายงานแล้ว (ตรงเป้า)', 'ยังไม่ได้รายงาน'], datasets: [{ data: [totalActualTargetAll, totalNotReported], backgroundColor: ['#28a745', '#dc3545'] }] },
             options: { maintainAspectRatio: false, plugins: { datalabels: { color: '#fff', font: { weight: 'bold', size: 14 }, textAlign: 'center',
                 formatter: function(value) { let t = totalTargetAll; if(t===0) return '0%'; return value + ' คน\n(' + Math.round((value/t)*100) + '%)'; } } } }
         });
 
-        // --- กราฟแท่ง ---
         if(currentChartTarget) currentChartTarget.destroy();
         currentChartTarget = new Chart(document.getElementById('targetChart').getContext('2d'), {
             type: 'bar',
@@ -225,7 +230,6 @@
                     formatter: function(v, ctx) { if(ctx.datasetIndex===1){ let t=ctx.chart.data.datasets[0].data[ctx.dataIndex]; if(t>0) return v+' ('+((v/t)*100).toFixed(0)+'%)'; } return v; } } } }
         });
 
-        // 2. ตารางผู้รายงาน (มีปุ่มแก้ไขเฉพาะรูป/ลบ)
         const dataTable = document.getElementById('dataTable');
         dataTable.innerHTML = '';
         reports.forEach(row => {
@@ -235,14 +239,12 @@
                 <td>${row.agency}</td>
                 <td>${row.name}${extraTag}</td>
                 <td style="text-align:center;">
-                    <a href="${row.imageUrl}" target="_blank" class="btn-view">🖼️ ดูรูป</a>
-                    <button class="btn-edit" onclick="editImage(${row.row}, '${row.name}')">📸 เปลี่ยนรูป</button>
+                    <a href="${row.imageUrl}" target="_blank" class="btn-view">🖼️ รูป</a>
                     <button class="btn-del" onclick="deleteRecord(${row.row})">🗑️ ลบ</button>
                 </td>
             </tr>`;
         });
 
-        // 3. ตารางคนที่ขาด
         const missingTable = document.getElementById('missingTable');
         missingTable.innerHTML = '';
         let missing = employees.filter(emp => !reportedNamesSet.has(emp.name.trim()));
@@ -251,60 +253,20 @@
         });
     }
 
-    // ฟังก์ชันลบ
     function deleteRecord(rowNum) {
         Swal.fire({
-            title: 'ยืนยันการลบ?', icon: 'warning', showCancelButton: true, confirmButtonText: 'ลบเลย!', cancelButtonText: 'ยกเลิก'
+            title: 'ยืนยันการลบ?', icon: 'warning', showCancelButton: true, confirmButtonText: 'ลบเลย!', cancelButtonText: 'ยกเลิก', confirmButtonColor: '#dc3545'
         }).then((result) => {
             if (result.isConfirmed) {
-                Swal.fire({ title: 'กำลังลบ...', didOpen: () => { Swal.showLoading(); }});
-                fetch(scriptURL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({action: 'delete', row: rowNum}) })
-                .then(() => { Swal.fire('สำเร็จ', 'ลบข้อมูลแล้ว', 'success'); fetchData(); });
-            }
-        });
-    }
-
-    // ฟังก์ชันแก้ไข (ให้อัปโหลดรูปใหม่เท่านั้น)
-    function editImage(rowNum, oldName) {
-        Swal.fire({
-            title: 'เปลี่ยนรูปภาพใหม่',
-            text: 'สำหรับ: ' + oldName,
-            html: '<input type="file" id="swal-file" accept="image/*" style="margin-top:15px;">',
-            showCancelButton: true, confirmButtonText: 'บันทึกรูปใหม่', cancelButtonText: 'ยกเลิก',
-            preConfirm: () => {
-                const file = document.getElementById('swal-file').files[0];
-                if (!file) { Swal.showValidationMessage('กรุณาเลือกรูปภาพ'); }
-                return file;
-            }
-        }).then((result) => {
-            if (result.isConfirmed && result.value) {
-                Swal.fire({ title: 'กำลังอัปโหลด...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+                Swal.fire({ title: 'กำลังลบ...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
                 
-                const file = result.value;
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = function(event) {
-                    const img = new Image();
-                    img.src = event.target.result;
-                    img.onload = function() {
-                        const canvas = document.createElement('canvas');
-                        let width = img.width, height = img.height;
-                        if (width > 600) { height = Math.round((height * 600) / width); width = 600; }
-                        canvas.width = width; canvas.height = height;
-                        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-
-                        const base64Data = canvas.toDataURL('image/jpeg', 0.6).split(',')[1];
-                        
-                        const payload = { action: 'editImage', row: rowNum, fileData: base64Data, mimeType: 'image/jpeg' };
-
-                        fetch(scriptURL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) })
-                        .then(() => { 
-                            Swal.fire('สำเร็จ', 'อัปเดตรูปภาพใหม่เรียบร้อยแล้ว', 'success'); 
-                            fetchData(); // รีเฟรชตารางใหม่
-                        })
-                        .catch(error => Swal.fire('ผิดพลาด', 'อัปเดตไม่สำเร็จ', 'error'));
-                    };
-                };
+                fetch(scriptURL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({action: 'delete', row: rowNum}) })
+                .then(() => { 
+                    localStorage.removeItem('eduPass_dashData'); // เคลียร์แคชทันทีที่กดลบ
+                    Swal.fire('สำเร็จ', 'ลบข้อมูลแล้ว', 'success'); 
+                    fetchData(); 
+                })
+                .catch(error => Swal.fire('ผิดพลาด', 'ลบข้อมูลไม่สำเร็จ', 'error'));
             }
         });
     }
