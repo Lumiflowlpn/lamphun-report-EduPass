@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบรายงานผล - สำหรับผู้บริหาร</title>
+    <title>รายงานผลเข้าใช้งานแอปพลิเคชัน EduPass ของบุคลากร</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -33,7 +33,7 @@
 <body>
 
 <div id="loginSection" class="card login-box">
-    <h3>🔒 เข้าสู่ระบบผู้บริหาร</h3>
+    <h3>🔒 เข้าสู่ระบบรายงานผลการลงทะเบียน<br>การเข้าใช้งานแอปพลิเคชัน EduPass <br>ของบุคลากร สกร.ลำพูน</h3>
     <input type="password" id="passwordInput" placeholder="ระบุรหัสผ่าน">
     
     <div style="text-align: left; margin-top: -5px; margin-bottom: 15px;">
@@ -47,7 +47,7 @@
 
 <div id="dashboardSection" class="container" style="display: none;">
     <h2 id="dashTitle">📊 Dashboard สรุปผลการลงทะเบียน Edu Pass</h2>
-    <div id="syncStatus" class="loading-badge">🔄 กำลังดึงข้อมูลล่าสุดจากเซิร์ฟเวอร์...</div>
+    <div id="syncStatus" class="loading-badge">🔄 กำลังดึงข้อมูลล่าสุดจากฐานข้อมูล...</div>
     
     <div class="grid-2">
         <div class="card">
@@ -85,7 +85,7 @@
 
     <div class="grid-2">
         <div class="card" style="overflow-x:auto;">
-            <h3>รายละเอียดผู้ที่รายงานแล้ว</h3>
+            <h3>ผู้ที่รายงานแล้ว</h3>
             <table>
                 <thead>
                     <tr>
@@ -127,9 +127,9 @@
     let currentChartTarget = null;
 
     const accessRoles = {
-        'admin1234': 'all', 'muang01': 'เมืองลำพูน', 'maetha02': 'แม่ทา', 
-        'banhong03': 'บ้านโฮ่ง', 'lee04': 'ลี้', 'thunghua05': 'ทุ่งหัวช้าง', 
-        'pasang06': 'ป่าซาง', 'banthi07': 'บ้านธิ', 'wiang08': 'เวียงหนองล่อง'
+        'สกรลพ': 'all', '1251010001': 'เมืองลำพูน', '1251020000': 'แม่ทา', 
+        '1251030000': 'บ้านโฮ่ง', '1251040000': 'ลี้', '1251050000': 'ทุ่งหัวช้าง', 
+        '1251060000': 'ป่าซาง', '1251070000': 'บ้านธิ', '1251080000': 'เวียงหนองล่อง'
     };
 
     function togglePassword() {
@@ -151,9 +151,9 @@
             document.getElementById('loginError').style.display = 'none';
             
             if (role === 'all') {
-                document.getElementById('dashTitle').innerHTML = '📊 Dashboard สรุปผล Edu Pass<br><small>ภาพรวมระดับจังหวัด</small>';
+                document.getElementById('dashTitle').innerHTML = 'สรุปผลการลงทะเบียนการเข้าใช้งานแอปพลิเคชัน EduPass<br>ของบุคลากร สกร.ลำพูน<br><small>ภาพรวมระดับจังหวัด</small>';
             } else {
-                document.getElementById('dashTitle').innerHTML = `📊 Dashboard สรุปผล Edu Pass<br><small>อำเภอ${role}</small>`;
+                document.getElementById('dashTitle').innerHTML = `สรุปผลการลงทะเบียนการเข้าใช้งานแอปพลิเคชัน EduPass<br>ของบุคลากร สกร.ลำพูน<br><small>อำเภอ${role}</small>`;
             }
             fetchData(role);
         } else {
