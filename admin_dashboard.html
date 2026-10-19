@@ -30,8 +30,9 @@
         .btn-view { padding: 6px 12px; background-color: #17a2b8; color: white; text-decoration: none; border-radius: 4px; font-size: 13px; cursor: pointer; border: none; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; font-family: 'Sarabun', sans-serif; }
         .btn-del { background-color: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 13px; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; font-family: 'Sarabun', sans-serif; }
         
+        /* กราฟและการจัดหน้า */
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .chart-container { position: relative; height: 350px; width: 100%; display: flex; justify-content: center; }
+        .chart-container { position: relative; height: 350px; width: 100%; display: flex; justify-content: center; align-items: center; }
         
         /* กล่อง Login */
         .login-box { max-width: 420px; width: 100%; margin: 80px auto; text-align: center; }
@@ -56,7 +57,7 @@
             .login-box h3 { font-size: 16px; }
             h2 { font-size: 18px; }
             h3 { font-size: 16px; }
-            .chart-container { height: 280px; }
+            .chart-container { height: 260px; } /* ลดความสูงกราฟบนมือถือ */
             table { font-size: 13px; min-width: 400px; }
             th, td { padding: 8px 6px; }
             .btn-view, .btn-del { padding: 5px 8px; font-size: 12px; }
@@ -292,24 +293,86 @@
 
         let totalNotReported = totalTargetAll - totalActualTargetAll;
         if(totalNotReported < 0) totalNotReported = 0;
+
+        // เช็คขนาดหน้าจอเพื่อปรับกราฟ
+        let isMobile = window.innerWidth <= 600;
         
+        // --- กราฟวงกลม ---
         if(currentChartStatus) currentChartStatus.destroy();
         currentChartStatus = new Chart(document.getElementById('statusChart').getContext('2d'), {
             type: 'pie',
-            data: { labels: ['รายงานแล้ว (ตรงเป้า)', 'ยังไม่ได้รายงาน'], datasets: [{ data: [totalActualTargetAll, totalNotReported], backgroundColor: ['#28a745', '#dc3545'] }] },
-            options: { maintainAspectRatio: false, plugins: { datalabels: { color: '#fff', font: { weight: 'bold', size: 14 }, textAlign: 'center',
-                formatter: function(value) { let t = totalTargetAll; if(t===0) return '0%'; return value + ' คน\n(' + Math.round((value/t)*100) + '%)'; } } } }
+            data: { 
+                labels: ['รายงานแล้ว (ตรงเป้า)', 'ยังไม่ได้รายงาน'], 
+                datasets: [{ data: [totalActualTargetAll, totalNotReported], backgroundColor: ['#28a745', '#dc3545'] }] 
+            },
+            options: { 
+                responsive: true,
+                maintainAspectRatio: false, 
+                plugins: { 
+                    legend: {
+                        position: isMobile ? 'bottom' : 'top',
+                        labels: { font: { size: isMobile ? 11 : 13, family: 'Sarabun' } }
+                    },
+                    datalabels: { 
+                        color: '#fff', 
+                        font: { weight: 'bold', size: isMobile ? 11 : 14 }, 
+                        textAlign: 'center',
+                        formatter: function(value) { 
+                            let t = totalTargetAll; 
+                            if(t === 0) return '0%'; 
+                            return value + ' คน\n(' + Math.round((value/t)*100) + '%)'; 
+                        } 
+                    } 
+                } 
+            }
         });
 
+        // --- กราฟแท่ง ---
         if(currentChartTarget) currentChartTarget.destroy();
         currentChartTarget = new Chart(document.getElementById('targetChart').getContext('2d'), {
             type: 'bar',
-            data: { labels: chartLabels, datasets: [{ label: 'เป้าหมาย (คน)', data: chartTargets, backgroundColor: '#cccccc' }, { label: 'รายงานแล้ว (คน)', data: chartActuals, backgroundColor: '#007bff' }] },
-            options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true, grace: '10%' } },
-                plugins: { datalabels: { anchor: 'end', align: 'top', font: { weight: 'bold' },
-                    formatter: function(v, ctx) { if(ctx.datasetIndex===1){ let t=ctx.chart.data.datasets[0].data[ctx.dataIndex]; if(t>0) return v+' ('+((v/t)*100).toFixed(0)+'%)'; } return v; } } } }
+            data: { 
+                labels: chartLabels, 
+                datasets: [
+                    { label: 'เป้าหมาย (คน)', data: chartTargets, backgroundColor: '#cccccc' }, 
+                    { label: 'รายงานแล้ว (คน)', data: chartActuals, backgroundColor: '#007bff' }
+                ] 
+            },
+            options: { 
+                responsive: true,
+                maintainAspectRatio: false, 
+                scales: { 
+                    y: { 
+                        beginAtZero: true, 
+                        grace: '10%',
+                        ticks: { font: { size: isMobile ? 10 : 12 } }
+                    },
+                    x: {
+                        ticks: { font: { size: isMobile ? 10 : 12 } }
+                    }
+                },
+                plugins: { 
+                    legend: {
+                        position: isMobile ? 'bottom' : 'top',
+                        labels: { font: { size: isMobile ? 11 : 13, family: 'Sarabun' } }
+                    },
+                    datalabels: { 
+                        anchor: 'end', 
+                        align: 'top', 
+                        font: { weight: 'bold', size: isMobile ? 9 : 11 },
+                        formatter: function(v, ctx) { 
+                            if(ctx.datasetIndex === 1){ 
+                                let t = ctx.chart.data.datasets[0].data[ctx.dataIndex]; 
+                                if(t > 0) return v + ' (' + ((v/t)*100).toFixed(0) + '%)'; 
+                            } 
+                            return v; 
+                        } 
+                    } 
+                } 
+            }
         });
 
+        // จัดการข้อมูลลงตาราง
         const dataTable = document.getElementById('dataTable');
         dataTable.innerHTML = '';
         if (reports.length === 0) {
