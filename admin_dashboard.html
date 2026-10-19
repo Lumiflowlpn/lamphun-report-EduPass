@@ -41,7 +41,7 @@
         .login-box button:hover { background-color: #0056b3; }
         
         .error-msg { color: red; font-size: 14px; display: none; margin-top: 10px; }
-        .loading-badge { display: none; text-align: center; color: #ff9800; font-size: 14px; font-weight: bold; margin-bottom: 15px; }
+        .loading-badge { display: none; text-align: center; color: #007bff; font-size: 13px; margin-bottom: 15px; padding: 8px; background: #e9ecef; border-radius: 5px; }
 
         /* ---------------------------------------------------
            MEDIA QUERIES สำหรับแท็บเล็ตและมือถือ (Responsive)
@@ -57,7 +57,7 @@
             .login-box h3 { font-size: 16px; }
             h2 { font-size: 18px; }
             h3 { font-size: 16px; }
-            .chart-container { height: 260px; } /* ลดความสูงกราฟบนมือถือ */
+            .chart-container { height: 260px; } 
             table { font-size: 13px; min-width: 400px; }
             th, td { padding: 8px 6px; }
             .btn-view, .btn-del { padding: 5px 8px; font-size: 12px; }
@@ -81,7 +81,7 @@
 
 <div id="dashboardSection" class="container" style="display: none;">
     <h2 id="dashTitle">📊 Dashboard สรุปผลการลงทะเบียน Edu Pass</h2>
-    <div id="syncStatus" class="loading-badge">🔄 กำลังดึงข้อมูลล่าสุดจากฐานข้อมูล...</div>
+    <div id="syncStatus" class="loading-badge">🔄 กำลังอัปเดตข้อมูลล่าสุดอยู่เบื้องหลัง...</div>
     
     <div class="grid-2">
         <div class="card">
@@ -174,11 +174,7 @@
 
     function togglePassword() {
         const pwdInput = document.getElementById('passwordInput');
-        if (pwdInput.type === "password") {
-            pwdInput.type = "text";
-        } else {
-            pwdInput.type = "password";
-        }
+        pwdInput.type = (pwdInput.type === "password") ? "text" : "password";
     }
 
     function checkLogin() {
@@ -207,28 +203,42 @@
     });
 
     function fetchData(role) {
-        Swal.fire({ title: 'กำลังโหลดข้อมูล...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
-
         const cachedData = localStorage.getItem('eduPass_dashData');
+        
         if (cachedData) {
+            // แสดงข้อมูลทันทีถ้ามีแคช (เร็วขึ้น 100%)
             renderDashboard(JSON.parse(cachedData), role);
             document.getElementById('syncStatus').style.display = 'block';
+            
+            // แอบโหลดข้อมูลใหม่หลังบ้านเงียบๆ
+            fetch(scriptURL + "?action=getReport")
+                .then(res => res.json())
+                .then(data => { 
+                    localStorage.setItem('eduPass_dashData', JSON.stringify(data));
+                    renderDashboard(data, role); // วาดตารางทับใหม่
+                    document.getElementById('syncStatus').style.display = 'none';
+                })
+                .catch(err => { 
+                    console.error(err);
+                    document.getElementById('syncStatus').innerText = '⚠️ เชื่อมต่อขัดข้อง (กำลังแสดงข้อมูลจากการโหลดครั้งล่าสุด)';
+                    document.getElementById('syncStatus').style.color = 'red';
+                });
+        } else {
+            // ถ้าไม่มีแคชเลย (โหลดครั้งแรกของเครื่อง) ให้แสดงหน้าต่างโหลด
+            Swal.fire({ title: 'กำลังดึงข้อมูลจากฐานข้อมูล...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+            fetch(scriptURL + "?action=getReport")
+                .then(res => res.json())
+                .then(data => { 
+                    localStorage.setItem('eduPass_dashData', JSON.stringify(data));
+                    renderDashboard(data, role); 
+                    Swal.close(); 
+                })
+                .catch(err => { 
+                    Swal.close(); 
+                    Swal.fire('ผิดพลาด', 'ไม่สามารถเชื่อมต่อฐานข้อมูลได้', 'error');
+                    console.error(err);
+                });
         }
-
-        fetch(scriptURL + "?action=getReport")
-            .then(res => res.json())
-            .then(data => { 
-                localStorage.setItem('eduPass_dashData', JSON.stringify(data));
-                renderDashboard(data, role); 
-                document.getElementById('syncStatus').style.display = 'none';
-                Swal.close(); 
-            })
-            .catch(err => { 
-                Swal.close(); 
-                console.error(err);
-                document.getElementById('syncStatus').innerText = '⚠️ การดึงข้อมูลล่าสุดล้มเหลว (แสดงผลข้อมูลเก่า)';
-                document.getElementById('syncStatus').style.color = 'red';
-            });
     }
 
     function renderDashboard(data, userRole) {
@@ -269,8 +279,8 @@
             reportedNamesSet.add(name);
         });
 
-        const targetTable = document.getElementById('targetTable');
-        targetTable.innerHTML = '';
+        // Batch DOM Rendering - เป้าหมาย
+        let targetHTML = '';
         let chartLabels = []; let chartTargets = []; let chartActuals = [];
         
         for (let amp in targetData) {
@@ -279,7 +289,7 @@
             if(pct > 100) pct = 100;
             let isComplete = d.actualTarget >= d.target;
             
-            targetTable.innerHTML += `<tr>
+            targetHTML += `<tr>
                 <td>${amp}</td>
                 <td style="text-align:center;">${d.target}</td>
                 <td style="text-align:center; color:#28a745; font-weight:bold;">${d.actualTarget}</td>
@@ -290,11 +300,11 @@
             
             chartLabels.push(amp); chartTargets.push(d.target); chartActuals.push(d.actualTarget);
         }
+        document.getElementById('targetTable').innerHTML = targetHTML;
 
         let totalNotReported = totalTargetAll - totalActualTargetAll;
         if(totalNotReported < 0) totalNotReported = 0;
 
-        // เช็คขนาดหน้าจอเพื่อปรับกราฟ
         let isMobile = window.innerWidth <= 600;
         
         // --- กราฟวงกลม ---
@@ -342,24 +352,13 @@
                 responsive: true,
                 maintainAspectRatio: false, 
                 scales: { 
-                    y: { 
-                        beginAtZero: true, 
-                        grace: '10%',
-                        ticks: { font: { size: isMobile ? 10 : 12 } }
-                    },
-                    x: {
-                        ticks: { font: { size: isMobile ? 10 : 12 } }
-                    }
+                    y: { beginAtZero: true, grace: '10%', ticks: { font: { size: isMobile ? 10 : 12 } } },
+                    x: { ticks: { font: { size: isMobile ? 10 : 12 } } }
                 },
                 plugins: { 
-                    legend: {
-                        position: isMobile ? 'bottom' : 'top',
-                        labels: { font: { size: isMobile ? 11 : 13, family: 'Sarabun' } }
-                    },
+                    legend: { position: isMobile ? 'bottom' : 'top', labels: { font: { size: isMobile ? 11 : 13, family: 'Sarabun' } } },
                     datalabels: { 
-                        anchor: 'end', 
-                        align: 'top', 
-                        font: { weight: 'bold', size: isMobile ? 9 : 11 },
+                        anchor: 'end', align: 'top', font: { weight: 'bold', size: isMobile ? 9 : 11 },
                         formatter: function(v, ctx) { 
                             if(ctx.datasetIndex === 1){ 
                                 let t = ctx.chart.data.datasets[0].data[ctx.dataIndex]; 
@@ -372,16 +371,14 @@
             }
         });
 
-        // จัดการข้อมูลลงตาราง
-        const dataTable = document.getElementById('dataTable');
-        dataTable.innerHTML = '';
+        // Batch DOM Rendering - รายงานแล้ว
+        let dataHTML = '';
         if (reports.length === 0) {
-            dataTable.innerHTML = '<tr><td colspan="3" style="text-align:center;">ยังไม่มีผู้รายงานผล</td></tr>';
+            dataHTML = '<tr><td colspan="3" style="text-align:center;">ยังไม่มีผู้รายงานผล</td></tr>';
         } else {
             reports.forEach(row => {
                 let extraTag = targetEmployeeNames.includes(row.name.trim()) ? '' : ' <span style="color:orange;font-size:11px;white-space:nowrap;">(นอกกลุ่ม)</span>';
-                
-                dataTable.innerHTML += `<tr>
+                dataHTML += `<tr>
                     <td>${row.agency}</td>
                     <td>${row.name}${extraTag}</td>
                     <td style="text-align:center;">
@@ -393,17 +390,19 @@
                 </tr>`;
             });
         }
+        document.getElementById('dataTable').innerHTML = dataHTML;
 
-        const missingTable = document.getElementById('missingTable');
-        missingTable.innerHTML = '';
+        // Batch DOM Rendering - ยังไม่ได้รายงาน
+        let missingHTML = '';
         let missing = employees.filter(emp => !reportedNamesSet.has(emp.name.trim()));
         if (missing.length === 0) {
-            missingTable.innerHTML = '<tr><td colspan="2" style="text-align:center; color:#28a745; font-weight:bold;">รายงานครบทุกคนแล้ว 🎉</td></tr>';
+            missingHTML = '<tr><td colspan="2" style="text-align:center; color:#28a745; font-weight:bold;">รายงานครบทุกคนแล้ว 🎉</td></tr>';
         } else {
             missing.forEach(emp => {
-                missingTable.innerHTML += `<tr><td>${emp.agency}</td><td>${emp.name}</td></tr>`;
+                missingHTML += `<tr><td>${emp.agency}</td><td>${emp.name}</td></tr>`;
             });
         }
+        document.getElementById('missingTable').innerHTML = missingHTML;
     }
 
     function deleteRecord(rowNum) {
@@ -415,9 +414,9 @@
                 
                 fetch(scriptURL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({action: 'delete', row: rowNum}) })
                 .then(() => { 
-                    localStorage.removeItem('eduPass_dashData'); // เคลียร์แคช
+                    localStorage.removeItem('eduPass_dashData'); // บังคับให้โหลดข้อมูลใหม่จาก DB
                     Swal.fire('สำเร็จ', 'ลบข้อมูลแล้ว', 'success'); 
-                    fetchData(globalRole); // โหลดข้อมูลใหม่ตามสิทธิ์ที่ล็อกอินอยู่
+                    fetchData(globalRole); 
                 })
                 .catch(error => Swal.fire('ผิดพลาด', 'ลบข้อมูลไม่สำเร็จ', 'error'));
             }
