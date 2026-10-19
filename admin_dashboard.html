@@ -4,30 +4,63 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>รายงานผลเข้าใช้งานแอปพลิเคชัน EduPass ของบุคลากร</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
-        body { font-family: 'Sarabun', sans-serif; background-color: #f4f7f6; padding: 20px; }
-        .container { max-width: 1200px; margin: 0 auto; }
-        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        h2, h3 { color: #333; text-align: center; margin-bottom: 15px;}
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
-        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
-        th { background-color: #007bff; color: white; text-align: center; }
+        * { box-sizing: border-box; }
+        body { font-family: 'Sarabun', sans-serif; background-color: #f4f7f6; padding: 20px; margin: 0; color: #333; }
+        .container { max-width: 1200px; margin: 0 auto; width: 100%; }
+        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); margin-bottom: 20px; width: 100%; }
+        h2, h3 { color: #333; text-align: center; margin-top: 5px; margin-bottom: 15px; line-height: 1.4; }
+        
+        /* ตารางและระบบเลื่อนแนวนอนบนมือถือ */
+        .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; min-width: 480px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; vertical-align: middle; }
+        th { background-color: #007bff; color: white; text-align: center; white-space: nowrap; }
         tr:nth-child(even) { background-color: #f9f9f9; }
-        .complete { color: #28a745; font-weight: bold; }
-        .incomplete { color: #dc3545; font-weight: bold; }
-        .btn-view { padding: 5px 12px; background-color: #17a2b8; color: white; text-decoration: none; border-radius: 3px; font-size: 13px; cursor: pointer; border: none;}
-        .btn-del { background-color: #dc3545; color: white; border: none; padding: 5px 12px; border-radius: 3px; cursor: pointer; font-size: 13px; }
+        
+        .complete { color: #28a745; font-weight: bold; white-space: nowrap; }
+        .incomplete { color: #dc3545; font-weight: bold; white-space: nowrap; }
+        
+        /* ปุ่มจัดการ */
+        .action-group { display: flex; gap: 6px; justify-content: center; align-items: center; flex-wrap: nowrap; }
+        .btn-view { padding: 6px 12px; background-color: #17a2b8; color: white; text-decoration: none; border-radius: 4px; font-size: 13px; cursor: pointer; border: none; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; font-family: 'Sarabun', sans-serif; }
+        .btn-del { background-color: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 13px; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; font-family: 'Sarabun', sans-serif; }
+        
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         .chart-container { position: relative; height: 350px; width: 100%; display: flex; justify-content: center; }
-        .login-box { max-width: 400px; margin: 80px auto; text-align: center; }
-        .login-box input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 16px; text-align: center;}
-        .login-box button { width: 100%; padding: 12px; background-color: #007bff; color: white; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; font-weight: bold; }
+        
+        /* กล่อง Login */
+        .login-box { max-width: 420px; width: 100%; margin: 80px auto; text-align: center; }
+        .login-box input[type="password"], .login-box input[type="text"] { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 16px; text-align: center; font-family: 'Sarabun', sans-serif; }
+        .login-box button { width: 100%; padding: 12px; background-color: #007bff; color: white; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; font-weight: bold; font-family: 'Sarabun', sans-serif; transition: 0.2s; }
+        .login-box button:hover { background-color: #0056b3; }
+        
         .error-msg { color: red; font-size: 14px; display: none; margin-top: 10px; }
-        .loading-badge { display: none; text-align: center; color: #ff9800; font-size: 14px; font-weight: bold; margin-bottom: 10px; }
-        @media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }
+        .loading-badge { display: none; text-align: center; color: #ff9800; font-size: 14px; font-weight: bold; margin-bottom: 15px; }
+
+        /* ---------------------------------------------------
+           MEDIA QUERIES สำหรับแท็บเล็ตและมือถือ (Responsive)
+           --------------------------------------------------- */
+        @media (max-width: 900px) {
+            .grid-2 { grid-template-columns: 1fr; gap: 15px; }
+        }
+
+        @media (max-width: 600px) {
+            body { padding: 10px; }
+            .card { padding: 15px; margin-bottom: 15px; border-radius: 8px; }
+            .login-box { margin: 30px auto; padding: 20px 15px; }
+            .login-box h3 { font-size: 16px; }
+            h2 { font-size: 18px; }
+            h3 { font-size: 16px; }
+            .chart-container { height: 280px; }
+            table { font-size: 13px; min-width: 400px; }
+            th, td { padding: 8px 6px; }
+            .btn-view, .btn-del { padding: 5px 8px; font-size: 12px; }
+        }
     </style>
 </head>
 <body>
@@ -64,55 +97,61 @@
         </div>
     </div>
 
-    <div class="card" style="overflow-x:auto;">
+    <div class="card">
         <h3>ความคืบหน้าเทียบเป้าหมาย</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>หน่วยงาน/สถานศึกษา</th>
-                    <th>เป้าหมาย</th>
-                    <th>รายงานแล้ว (ในเป้าหมาย)</th>
-                    <th>เพิ่มเติมนอกเป้าหมาย</th>
-                    <th>ร้อยละ (%)</th>
-                    <th>สถานะ</th>
-                </tr>
-            </thead>
-            <tbody id="targetTable">
-                <tr><td colspan="6" style="text-align:center;">กำลังประมวลผล...</td></tr>
-            </tbody>
-        </table>
-    </div>
-
-    <div class="grid-2">
-        <div class="card" style="overflow-x:auto;">
-            <h3>ผู้ที่รายงานแล้ว</h3>
+        <div class="table-responsive">
             <table>
                 <thead>
                     <tr>
-                        <th>หน่วยงาน</th>
-                        <th>ชื่อ</th>
-                        <th style="width: 150px; text-align:center;">จัดการ</th>
+                        <th>หน่วยงาน/สถานศึกษา</th>
+                        <th>เป้าหมาย</th>
+                        <th>รายงานแล้ว (ในเป้าหมาย)</th>
+                        <th>เพิ่มเติมนอกเป้าหมาย</th>
+                        <th>ร้อยละ (%)</th>
+                        <th>สถานะ</th>
                     </tr>
                 </thead>
-                <tbody id="dataTable">
-                    <tr><td colspan="3" style="text-align:center;">กำลังประมวลผล...</td></tr>
+                <tbody id="targetTable">
+                    <tr><td colspan="6" style="text-align:center;">กำลังประมวลผล...</td></tr>
                 </tbody>
             </table>
         </div>
+    </div>
 
-        <div class="card" style="overflow-x:auto;">
+    <div class="grid-2">
+        <div class="card">
+            <h3>ผู้ที่รายงานแล้ว</h3>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>หน่วยงาน</th>
+                            <th>ชื่อ</th>
+                            <th style="width: 140px; text-align:center;">จัดการ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dataTable">
+                        <tr><td colspan="3" style="text-align:center;">กำลังประมวลผล...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card">
             <h3 style="color:#dc3545;">❌ ผู้ที่ยังไม่ได้รายงาน</h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th style="background-color:#dc3545;">หน่วยงาน</th>
-                        <th style="background-color:#dc3545;">ชื่อ</th>
-                    </tr>
-                </thead>
-                <tbody id="missingTable">
-                    <tr><td colspan="2" style="text-align:center;">กำลังประมวลผล...</td></tr>
-                </tbody>
-            </table>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="background-color:#dc3545;">หน่วยงาน</th>
+                            <th style="background-color:#dc3545;">ชื่อ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="missingTable">
+                        <tr><td colspan="2" style="text-align:center;">กำลังประมวลผล...</td></tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
@@ -146,14 +185,15 @@
         const role = accessRoles[pwd];
 
         if (role) {
+            globalRole = role;
             document.getElementById('loginSection').style.display = 'none';
             document.getElementById('dashboardSection').style.display = 'block';
             document.getElementById('loginError').style.display = 'none';
             
             if (role === 'all') {
-                document.getElementById('dashTitle').innerHTML = 'สรุปผลการลงทะเบียนการเข้าใช้งานแอปพลิเคชัน EduPass<br>ของบุคลากร สกร.ลำพูน<br><small>ภาพรวมระดับจังหวัด</small>';
+                document.getElementById('dashTitle').innerHTML = 'สรุปผลการลงทะเบียนการเข้าใช้งานแอปพลิเคชัน EduPass<br>ของบุคลากร สกร.ลำพูน<br><small style="color:#555;">ภาพรวมระดับจังหวัด</small>';
             } else {
-                document.getElementById('dashTitle').innerHTML = `สรุปผลการลงทะเบียนการเข้าใช้งานแอปพลิเคชัน EduPass<br>ของบุคลากร สกร.ลำพูน<br><small>อำเภอ${role}</small>`;
+                document.getElementById('dashTitle').innerHTML = `สรุปผลการลงทะเบียนการเข้าใช้งานแอปพลิเคชัน EduPass<br>ของบุคลากร สกร.ลำพูน<br><small style="color:#555;">อำเภอ${role}</small>`;
             }
             fetchData(role);
         } else {
@@ -238,14 +278,13 @@
             if(pct > 100) pct = 100;
             let isComplete = d.actualTarget >= d.target;
             
-            // แก้ไข Syntax Error บริเวณนี้เรียบร้อยแล้ว
             targetTable.innerHTML += `<tr>
                 <td>${amp}</td>
                 <td style="text-align:center;">${d.target}</td>
                 <td style="text-align:center; color:#28a745; font-weight:bold;">${d.actualTarget}</td>
                 <td style="text-align:center; color:#17a2b8; font-weight:bold;">+${d.extra}</td>
                 <td style="text-align:center;">${pct}%</td>
-                <td class="${isComplete ? 'complete' : 'incomplete'}">${isComplete ? 'ครบถ้วน' : `ขาด ${d.target - d.actualTarget}`}</td>
+                <td style="text-align:center;" class="${isComplete ? 'complete' : 'incomplete'}">${isComplete ? 'ครบถ้วน' : `ขาด ${d.target - d.actualTarget}`}</td>
             </tr>`;
             
             chartLabels.push(amp); chartTargets.push(d.target); chartActuals.push(d.actualTarget);
@@ -273,25 +312,35 @@
 
         const dataTable = document.getElementById('dataTable');
         dataTable.innerHTML = '';
-        reports.forEach(row => {
-            let extraTag = targetEmployeeNames.includes(row.name.trim()) ? '' : ' <span style="color:orange;font-size:10px;">(นอกกลุ่ม)</span>';
-            
-            dataTable.innerHTML += `<tr>
-                <td>${row.agency}</td>
-                <td>${row.name}${extraTag}</td>
-                <td style="text-align:center;">
-                    <a href="${row.imageUrl}" target="_blank" class="btn-view">🖼️ รูป</a>
-                    <button class="btn-del" onclick="deleteRecord(${row.row})">🗑️ ลบ</button>
-                </td>
-            </tr>`;
-        });
+        if (reports.length === 0) {
+            dataTable.innerHTML = '<tr><td colspan="3" style="text-align:center;">ยังไม่มีผู้รายงานผล</td></tr>';
+        } else {
+            reports.forEach(row => {
+                let extraTag = targetEmployeeNames.includes(row.name.trim()) ? '' : ' <span style="color:orange;font-size:11px;white-space:nowrap;">(นอกกลุ่ม)</span>';
+                
+                dataTable.innerHTML += `<tr>
+                    <td>${row.agency}</td>
+                    <td>${row.name}${extraTag}</td>
+                    <td style="text-align:center;">
+                        <div class="action-group">
+                            <a href="${row.imageUrl}" target="_blank" class="btn-view">🖼️ รูป</a>
+                            <button class="btn-del" onclick="deleteRecord(${row.row})">🗑️ ลบ</button>
+                        </div>
+                    </td>
+                </tr>`;
+            });
+        }
 
         const missingTable = document.getElementById('missingTable');
         missingTable.innerHTML = '';
         let missing = employees.filter(emp => !reportedNamesSet.has(emp.name.trim()));
-        missing.forEach(emp => {
-            missingTable.innerHTML += `<tr><td>${emp.agency}</td><td>${emp.name}</td></tr>`;
-        });
+        if (missing.length === 0) {
+            missingTable.innerHTML = '<tr><td colspan="2" style="text-align:center; color:#28a745; font-weight:bold;">รายงานครบทุกคนแล้ว 🎉</td></tr>';
+        } else {
+            missing.forEach(emp => {
+                missingTable.innerHTML += `<tr><td>${emp.agency}</td><td>${emp.name}</td></tr>`;
+            });
+        }
     }
 
     function deleteRecord(rowNum) {
@@ -305,7 +354,7 @@
                 .then(() => { 
                     localStorage.removeItem('eduPass_dashData'); // เคลียร์แคช
                     Swal.fire('สำเร็จ', 'ลบข้อมูลแล้ว', 'success'); 
-                    fetchData(globalRole); // โหลดข้อมูลใหม่
+                    fetchData(globalRole); // โหลดข้อมูลใหม่ตามสิทธิ์ที่ล็อกอินอยู่
                 })
                 .catch(error => Swal.fire('ผิดพลาด', 'ลบข้อมูลไม่สำเร็จ', 'error'));
             }
