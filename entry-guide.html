@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>คู่มือการเข้าสู่ระบบติดตามการลงทะเบียน EduPass - สกร.ลำพูน</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background-color: #f1f5f9;
+            margin: 0;
+            padding: 25px;
+            color: #1e293b;
+        }
+        .guide-container {
+            max-width: 950px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            overflow: hidden;
+            border: 1px solid #cbd5e1;
+        }
+
+        /* ส่วนหัว */
+        .header {
+            background: linear-gradient(135deg, #1e3a8a 0%, #0284c7 100%);
+            color: white;
+            padding: 30px 25px;
+            text-align: center;
+        }
+        .badge {
+            display: inline-block;
+            background: #facc15;
+            color: #0f172a;
+            padding: 5px 16px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 700;
+            line-height: 1.4;
+        }
+        .header p {
+            margin: 8px 0 0;
+            font-size: 17px;
+            opacity: 0.95;
+        }
+
+        /* เนื้อหาขั้นตอน */
+        .content { padding: 30px; }
+
+        .step-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-bottom: 25px;
+        }
+        @media (max-width: 768px) {
+            .step-row { grid-template-columns: 1fr; }
+        }
+
+        .step-card {
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 20px;
+            position: relative;
+        }
+        .step-card.full-width {
+            grid-column: 1 / -1;
+            background: #ffffff;
+            border-color: #93c5fd;
+            box-shadow: 0 4px 15px rgba(2, 132, 199, 0.06);
+        }
+
+        .step-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+        .step-number {
+            background: #0284c7;
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+        .step-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1e3a8a;
+        }
+
+        /* จำลองหน้าเว็บขั้นตอนที่ 1 */
+        .browser-mock {
+            background: white;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+        }
+        .url-bar {
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            border-radius: 20px;
+            padding: 8px 15px;
+            font-size: 15px;
+            color: #0284c7;
+            font-weight: 700;
+            display: inline-block;
+            width: 100%;
+            margin-top: 8px;
+        }
+
+        /* จำลองเมนูระบบสารสนเทศ ขั้นตอนที่ 2 & 3 */
+        .sidebar-mock {
+            width: 240px;
+            margin: 0 auto;
+            border: 1px solid #38bdf8;
+            border-radius: 8px;
+            background: white;
+            overflow: hidden;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        }
+        .sidebar-header {
+            background: linear-gradient(180deg, #0ea5e9 0%, #0284c7 100%);
+            color: white;
+            padding: 8px 12px;
+            font-weight: 700;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .sidebar-body { padding: 10px; }
+        .menu-btn-mock {
+            background: #f1f5f9;
+            border: 1px solid #94a3b8;
+            border-radius: 4px;
+            padding: 6px 10px;
+            font-size: 13px;
+            color: #334155;
+            margin-bottom: 6px;
+            text-align: center;
+        }
+        .menu-btn-mock.highlight {
+            background: #fef08a;
+            border: 2px solid #eab308;
+            color: #0f172a;
+            font-weight: 700;
+            position: relative;
+            box-shadow: 0 0 0 3px rgba(234, 179, 8, 0.25);
+        }
+        .click-pointer {
+            color: #dc2626;
+            font-weight: 700;
+            font-size: 13px;
+            display: block;
+            text-align: center;
+            margin-top: 6px;
+        }
+
+        /* จำลองหน้า Portal 2 ปุ่มใหญ่ (ตรงตามภาพจริง) */
+        .portal-mock {
+            background: #f8fafc;
+            border: 1px dashed #cbd5e1;
+            border-radius: 14px;
+            padding: 25px 20px;
+            text-align: center;
+            margin-top: 10px;
+        }
+        .portal-mock h3 {
+            color: #1e3a8a;
+            margin: 5px 0 4px;
+            font-size: 20px;
+        }
+        .portal-mock p {
+            color: #64748b;
+            font-size: 14px;
+            margin: 0 0 20px;
+        }
+        .portal-cards-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 650px) {
+            .portal-cards-grid { grid-template-columns: 1fr; }
+        }
+        .p-card {
+            background: white;
+            border-radius: 16px;
+            padding: 25px 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.04);
+        }
+        .p-card.staff { border: 2px solid #fde68a; }
+        .p-card.learner { border: 2px solid #bae6fd; }
+
+        .p-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            margin-bottom: 15px;
+        }
+        .p-card.staff .p-icon { background: #fef3c7; }
+        .p-card.learner .p-icon { background: #e0f2fe; }
+
+        .p-title {
+            font-weight: 700;
+            font-size: 15px;
+            line-height: 1.5;
+            color: #1e293b;
+            margin-bottom: 15px;
+        }
+        .text-orange { color: #d97706; font-size: 17px; }
+        .text-blue { color: #0284c7; font-size: 17px; }
+
+        .p-btn-orange {
+            background: #f59e0b;
+            color: white;
+            padding: 8px 22px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 14px;
+            box-shadow: 0 3px 6px rgba(245, 158, 11, 0.3);
+        }
+        .p-btn-blue {
+            background: #e0f2fe;
+            color: #0284c7;
+            border: 1px solid #bae6fd;
+            padding: 8px 22px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .footer {
+            background: #0f172a;
+            color: #cbd5e1;
+            text-align: center;
+            padding: 15px;
+            font-size: 14px;
+        }
+
+        .print-bar {
+            max-width: 950px;
+            margin: 0 auto 15px;
+            text-align: right;
+        }
+        .btn-print {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-family: 'Sarabun', sans-serif;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        @media print {
+            body { background: white; padding: 0; }
+            .print-bar { display: none; }
+            .guide-container { box-shadow: none; border: none; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="print-bar">
+    <button class="btn-print" onclick="window.print()">🖨️ พิมพ์ / บันทึกเป็น PDF</button>
+</div>
+
+<div class="guide-container">
+    <div class="header">
+        <h1>การเข้าสู่ระบบติดตามการลงทะเบียนการเข้าใช้งานแอปพลิเคชัน EduPass<br>ของบุคลากรทางการศึกษาและผู้เรียน</h1>
+        <p>สังกัดสำนักงานส่งเสริมการเรียนรู้ประจำจังหวัดลำพูน</p>
+    </div>
+
+    <div class="content">
+        <div class="step-row">
+            <!-- ขั้นตอนที่ 1 -->
+            <div class="step-card">
+                <div class="step-header">
+                    <div class="step-number">1</div>
+                    <div class="step-title">เข้าสู่เว็บไซต์สำนักงาน สกร.ประจำจังหวัดลำพูน</div>
+                </div>
+                <p style="font-size: 14px; margin-top: 0; color: #475569;">
+                    เปิดเว็บเบราว์เซอร์ (เช่น Google Chrome, Safari หรือ Microsoft Edge) แล้วพิมพ์ที่อยู่เว็บไซต์ หรือค้นหาเว็บไซต์หลักของสำนักงาน:
+                </p>
+                <div class="browser-mock">
+                    <span style="font-size: 40px;">🌐</span>
+                    <div style="font-weight: bold; margin-top: 5px;">สำนักงานส่งเสริมการเรียนรู้ประจำจังหวัดลำพูน</div>
+                    <div class="url-bar">🔗 http://lpn.dole.go.th/lpn/</div>
+                </div>
+            </div>
+
+            <!-- ขั้นตอนที่ 2 และ 3 -->
+            <div class="step-card">
+                <div class="step-header">
+                    <div class="step-number">2</div>
+                    <div class="step-title">ไปที่เมนู "ระบบสารสนเทศ" ➔ "การลงทะเบียน EduPass"</div>
+                </div>
+                <p style="font-size: 14px; margin-top: 0; color: #475569;">
+                    สังเกตแถบเมนู <b>"ระบบสารสนเทศ"</b> แล้วคลิกที่ปุ่มเมนู <b>"การลงทะเบียน EduPass"</b> ด้านล่างสุด:
+                </p>
+                <div class="sidebar-mock">
+                    <div class="sidebar-header">🌿 ระบบสารสนเทศ</div>
+                    <div class="sidebar-body">
+                        <div class="menu-btn-mock">LAMPHUN MOOC</div>
+                        <div class="menu-btn-mock">โปรแกรมบริหารเงินเดือน</div>
+                        <div class="menu-btn-mock">สลิปเงินเดือนออนไลน์</div>
+                        <div class="menu-btn-mock highlight">การลงทะเบียน EduPass</div>
+                    </div>
+                </div>
+                <span class="click-pointer">👆 คลิกที่ปุ่ม "การลงทะเบียน EduPass"</span>
+            </div>
+        </div>
+
+        <!-- ขั้นตอนที่ 3 (เลือกประเภทผู้ใช้งาน) -->
+        <div class="step-card full-width">
+            <div class="step-header">
+                <div class="step-number">3</div>
+                <div class="step-title">เลือกเข้าใช้งานตามประเภทกลุ่มเป้าหมาย (แบ่งออกเป็น 2 ปุ่ม)</div>
+            </div>
+            <p style="font-size: 14px; margin-top: 0; color: #475569;">
+                เมื่อคลิกเข้ามาแล้ว ระบบจะแสดงหน้าจอหลักซึ่งแบ่งออกเป็น 2 ระบบ ให้เลือกคลิกปุ่มตามสถานะของผู้ใช้งาน ดังนี้:
+            </p>
+
+            <div class="portal-mock">
+                <div style="font-size: 36px;">📱</div>
+                <h3>ระบบติดตามการลงทะเบียนการเข้าใช้งานแอปพลิเคชัน EduPass</h3>
+                <p>สำนักงานส่งเสริมการเรียนรู้ประจำจังหวัดลำพูน</p>
+
+                <div class="portal-cards-grid">
+                    <!-- ปุ่มที่ 1: บุคลากร -->
+                    <div class="p-card staff">
+                        <div class="p-icon">👨‍🏫</div>
+                        <div class="p-title">
+                            ระบบติดตามการลงทะเบียน<br>
+                            การเข้าใช้งานแอปพลิเคชัน EduPass<br>
+                            <span class="text-orange">ของบุคลากรทางการศึกษา</span>
+                        </div>
+                        <div class="p-btn-orange">👉 คลิกเพื่อเข้าใช้งาน</div>
+                        <small style="color:#64748b; margin-top:12px; display:block;">
+                            * สำหรับข้าราชการ ครู และบุคลากรทางการศึกษา และแอดมินผู้ดูแลระดับอำเภอ/จังหวัด
+                        </small>
+                    </div>
+
+                    <!-- ปุ่มที่ 2: ผู้เรียน -->
+                    <div class="p-card learner">
+                        <div class="p-icon">🎓</div>
+                        <div class="p-title">
+                            ระบบติดตามการลงทะเบียน<br>
+                            การเข้าใช้งานแอปพลิเคชัน EduPass<br>
+                            <span class="text-blue">ของผู้เรียน</span>
+                        </div>
+                        <div class="p-btn-blue">✅ คลิกเข้าใช้งาน</div>
+                        <small style="color:#64748b; margin-top:12px; display:block;">
+                            * สำหรับผู้เรียน และแอดมินผู้ดูแลระดับตำบล/อำเภอ/จังหวัด
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ขั้นตอนที่ 4 (กำหนดการ) เพิ่มใหม่ตามที่ขอ -->
+        <div class="step-card full-width" style="border-color: #fca5a5; background-color: #fef2f2; margin-top: 25px;">
+            <div class="step-header">
+                <div class="step-number" style="background: #ef4444;">4</div>
+                <div class="step-title" style="color: #b91c1c;">กำหนดระยะเวลาดำเนินการลงทะเบียน (สำคัญ)</div>
+            </div>
+            <p style="font-size: 15px; margin-top: 0; color: #7f1d1d;">
+                ขอให้ทุกท่านดำเนินการลงทะเบียนและรายงานผลเข้าสู่ระบบให้แล้วเสร็จ ตามกรอบระยะเวลาดังต่อไปนี้:
+            </p>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
+                <div style="background: white; border-left: 5px solid #f59e0b; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                    <strong style="color: #d97706; font-size: 16px; display: block; margin-bottom: 5px;">👨‍🏫 บุคลากรทางการศึกษา</strong>
+                    <span style="color: #475569; font-size: 15px;">ดำเนินการให้แล้วเสร็จ ภายในวันที่ <br><b style="color: #b45309; font-size: 16px;">31 ตุลาคม 2569</b></span>
+                </div>
+                <div style="background: white; border-left: 5px solid #0ea5e9; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                    <strong style="color: #0284c7; font-size: 16px; display: block; margin-bottom: 5px;">🎓 ผู้เรียน ของ สกร.ลำพูน</strong>
+                    <span style="color: #475569; font-size: 15px;">ดำเนินการให้แล้วเสร็จ ภายในวันที่ <br><b style="color: #0369a1; font-size: 16px;">30 พฤศจิกายน 2569</b></span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</body>
+</html>
